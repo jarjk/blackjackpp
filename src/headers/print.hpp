@@ -2,6 +2,16 @@
 
 #include <string>
 
+#include "input.hpp"
+#include "tui.hpp"
+
+inline char read_ch() {
+    tui::enable_raw_mode();
+    char ch = Input::read_ch();
+    tui::disable_raw_mode();
+    return ch;
+}
+
 struct Print {
     static std::string title_blackjack();
     static std::string begin_menu();

@@ -7,6 +7,10 @@
 #include <utility>
 
 #include "headers/color.hpp"
+#include "tui.hpp"
+
+namespace color = tui::text::color;
+namespace style = tui::text::style;
 
 //////////////* Default Constructor *////
 
@@ -88,10 +92,10 @@ void Statistics::print() {
             case 2:
                 std::cout << "MAX LOSES ||||||||| ";
         }
-        std::cout << std::setw(maxlength + 1) << p.at(i).getName() << "\t | \t" << lightGreen
-                  << "Cash: " << std::setw(7) << p.at(i).getCash() << "\t | \t" << yellow
-                  << "Wins: " << std::setw(5) << p.at(i).getWins() << "\t | \t" << lightRed
-                  << "Loses: " << std::setw(5) << p.at(i).getLoses() << def << "\n";
+        std::cout << std::setw(maxlength + 1) << p[i].getName() << "\t | \t" << color::green_fg()
+                  << "Cash: " << std::setw(7) << p[i].getCash() << "\t | \t" << color::yellow_fg()
+                  << "Wins: " << std::setw(5) << p[i].getWins() << "\t | \t" << color::red_fg()
+                  << "Loses: " << std::setw(5) << p[i].getLoses() << style::reset_style() << "\n";
     }
 }
 
