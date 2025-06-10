@@ -1,7 +1,6 @@
-#include <time.h>
+#include <ctime>
 #include <iostream>
 
-#include "headers/blackjack.hpp"
 #include "game.hpp"
 #include "tui.hpp"
 

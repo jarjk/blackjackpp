@@ -1,10 +1,11 @@
+#include "headers/statistics.hpp"
+
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <utility>
 
-#include "headers/statistics.hpp"
 #include "headers/color.hpp"
 #include "tui.hpp"
 
