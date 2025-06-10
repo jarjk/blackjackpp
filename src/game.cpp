@@ -3,10 +3,17 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "headers/color.hpp"
 #include "headers/compatible.hpp"
 #include "headers/print.hpp"
+#include "input.hpp"
+#include "print.hpp"
+#include "tui.hpp"
+
+namespace color = tui::text::color;
+namespace style = tui::text::style;
 
 //////////////* Default Constructor *////
 
@@ -35,18 +42,19 @@ bool Game::dealDealer() {
 char Game::compareSum() {
     if (player.getSum() > dealer.getSum()) {
         printTop();
-        std::cout << lightYellow << Print::you_win() << def << "\n    (Dealer has " << dealer.getSum()
-                  << ")\n";
+        std::cout << tui::string(Print::you_win()).yellow() << style::reset_style() << "\n    (Dealer has "
+                  << dealer.getSum() << ")\n";
         return 'p';
     }
     if (dealer.getSum() > player.getSum()) {
         printTop();
-        std::cout << lightRed << Print::dealer_wins() << def << "\n    (" << dealer.getSum() << ")\n";
+        std::cout << tui::string(Print::dealer_wins()).red() << "\n    (" << dealer.getSum() << ")\n";
         return 'd';
+    } else {
+        printTop();
+        std::cout << tui::string(Print::draw()).magenta();
+        return 'n';
     }
-    printTop();
-    std::cout << lightMagenta << Print::draw() << def;
-    return 'n';
 }
 
 bool Game::checkWins() {
@@ -67,7 +75,7 @@ bool Game::checkWins() {
 char Game::checkEnd() {
     if (dealer.getSum() > 21 || player.getSum() > 21) {
         printTop();
-        std::cout << red << Print::bust() << def << "\n    [Dealer : " << dealer.getSum() << " | "
+        std::cout << tui::string(Print::bust()).red() << "\n    [Dealer : " << dealer.getSum() << " | "
                   << player.getName() << " : " << player.getSum() << "]\n";
         if (dealer.getSum() > 21) {
             return 'p';
@@ -77,7 +85,7 @@ char Game::checkEnd() {
         }
     } else if (dealer.getSum() == 21 || player.getSum() == 21) {
         printTop();
-        std::cout << lightGreen << Print::blackjack() << def << "\n    [Dealer : " << dealer.getSum()
+        std::cout << tui::string(Print::blackjack()).green() << "\n    [Dealer : " << dealer.getSum()
                   << " | " << player.getName() << " : " << player.getSum() << "]\n";
         if (dealer.getSum() == 21) {
             return 'd';
@@ -95,9 +103,9 @@ bool Game::startBet() {
     if (player.getCash() > 0) {
         while (true) {
             printTop();
-            std::cout << "Place your bet!\t\t $" << green << player.getBet() << def
+            std::cout << "Place your bet!\t\t $" << tui::string(player.getBet()).green()
                       << "\n[W = Raise Bet | S = Decrease Bet | R = Done]\n";
-            int c = toupper(getch());
+            int c = toupper(read_ch());
             switch (c) {
                 case 87:
                     if (player.getCash() >= 5) {
@@ -109,9 +117,6 @@ bool Game::startBet() {
                         player.setBet(-5);
                     }
                     break;
-            }
-            if (c == 82) {
-                break;
             }
         }
         return true;
@@ -129,8 +134,8 @@ bool Game::startGame() {
         return false;
     }
     while (true) {
-        std::cout << lightYellow << "\n\nH : Hit | S : Stand\n" << def;
-        int c = toupper(getch());
+        std::cout << tui::string("\n\nH : Hit | S : Stand\n").yellow();
+        int c = toupper(read_ch());
         if (c == 72) {
             player.addCard(deck.deal());
             printBody();
@@ -153,7 +158,7 @@ void Game::beginGame() {
         player.clearCards();
         dealer.clearCards();
         if (!startBet()) {
-            std::cout << lightRed << "\nBankrupt! Game over.\n" << def;
+            std::cout << tui::string("\nBankrupt! Game over.\n").yellow();
             break;
         }
         if (startGame()) {
@@ -172,14 +177,14 @@ void Game::beginGame() {
                 }
             }
         }
-        std::cout << lightRed << Print::dealer_border() << def;
+        std::cout << tui::string(Print::dealer_border()).red();
         dealer.printCards();
-        std::cout << lightCyan << Print::player_border() << def;
+        std::cout << tui::string(Print::player_border()).cyan();
         player.printCards();
-        std::cout << yellow << "\nYour wins: " << player.getWins() << lightRed
-                  << "\nYour loses: " << player.getLoses() << def << "\n";
+        std::cout << color::yellow_fg() << "\nYour wins: " << player.getWins() << color::red_fg()
+                  << "\nYour loses: " << player.getLoses() << style::reset_style() << "\n";
         if (s.check(player)) {
-            std::cout << lightYellow << "High Score!\n" << def;
+            std::cout << tui::string("High Score!\n").yellow();
         }
         std::cout << "\nContinue playing? [Y/N]: ";
         std::cin >> cont;
@@ -194,12 +199,13 @@ void Game::beginGame() {
 
 //////////////* Main Method to be Called *////
 
-void Game::beginMenu(bool rep, const std::string& message) {
-    clearscr();
-    std::cout << yellow << Print::title_blackjack() << def << "\n";
+void Game::beginMenu(bool rep, const std::string &message) {
+    tui::screen::clear();
+    tui::cursor::home();
+    std::cout << tui::string(Print::title_blackjack()).yellow() << "\n";
     std::cout << Print::begin_menu() << "\n";
     if (rep) {
-        std::cout << red << message << def << "\n";
+        std::cout << tui::string(message).red() << "\n";
     }
     char c = 0;
     std::cout << "Input : ";
@@ -252,8 +258,8 @@ void Game::saveGame() {
     int nameSize = sName.size();
     f2.open(path, std::ios::in | std::ios::binary);
     if (!f2.fail()) {
-        char choice = 0;
-        std::cout << red << "File already exists." << def << " Do you want to overwrite it? [Y/N]: ";
+        char choice;
+        std::cout << tui::string("File already exists.").red() << " Do you want to overwrite it? [Y/N]: ";
         std::cin >> choice;
         if (choice == 'N' || choice == 'n') {
             saveGame();
@@ -261,11 +267,11 @@ void Game::saveGame() {
     }
     f2.close();
     f1.open(path, std::ios::out | std::ios::binary);
-    f1.write((char*)&nameSize, sizeof(nameSize));
+    f1.write((char *)&nameSize, sizeof(nameSize));
     f1.write(sName.c_str(), sName.size());
-    f1.write((char*)&sCash, sizeof(sCash));
-    f1.write((char*)&sWins, sizeof(sWins));
-    f1.write((char*)&sLoses, sizeof(sLoses));
+    f1.write((char *)&sCash, sizeof(sCash));
+    f1.write((char *)&sWins, sizeof(sWins));
+    f1.write((char *)&sLoses, sizeof(sLoses));
     f1.close();
 }
 
@@ -286,12 +292,12 @@ void Game::loadGame() {
         int sWins = 0;
         int sLoses = 0;
         int nameSize = 0;
-        f1.read((char*)&nameSize, sizeof(nameSize));
+        f1.read((char *)&nameSize, sizeof(nameSize));
         sName.resize(nameSize);
         f1.read(&sName[0], sName.size());
-        f1.read((char*)&sCash, sizeof(sCash));
-        f1.read((char*)&sWins, sizeof(sWins));
-        f1.read((char*)&sLoses, sizeof(sLoses));
+        f1.read((char *)&sCash, sizeof(sCash));
+        f1.read((char *)&sWins, sizeof(sWins));
+        f1.read((char *)&sLoses, sizeof(sLoses));
         f1.close();
         player.setName(sName);
         player.addCash(sCash - player.getCash());
@@ -309,34 +315,38 @@ void Game::loadGame() {
 //////////////* Printing Stuff *////
 
 void Game::printStatistics() {
-    clearscr();
-    std::cout << yellow << Print::title_blackjack() << def << "\n";
-    std::cout << "\n" << lightGreen << Print::statistics() << def << "\n";
+    tui::screen::clear();
+    tui::cursor::home();
+    std::cout << tui::string(Print::title_blackjack()).yellow() << "\n";
+    std::cout << "\n" << tui::string(Print::statistics()).green() << "\n";
     s.print();
     std::cout << "\n\n\t(Press any key to continue)\n";
-    static_cast<void>(getch());
+    read_ch();
 }
 
 void Game::printInstructions() {
-    clearscr();
-    std::cout << yellow << Print::title_blackjack() << def << "\n";
-    std::cout << "\n" << lightGreen << Print::instructions() << def << "\n";
-    static_cast<void>(getch());
+    tui::screen::clear();
+    tui::cursor::home();
+    std::cout << tui::string(Print::title_blackjack()).yellow() << "\n";
+    std::cout << "\n" << tui::string(Print::instructions()).green() << "\n";
+    read_ch();
 }
 
 void Game::printTop() {
-    clearscr();
-    std::cout << yellow << Print::title_blackjack() << def << "\n";
-    std::cout << lightRed << "\t\tCards: " << deck.getSize() << lightGreen
-              << " \tCash: " << player.getCash() << lightMagenta << " \tBet: " << player.getBet()
-              << lightBlue << " \tName: " << player.getName() << def << "\n\n\n";
+    tui::screen::clear();
+    tui::cursor::home();
+    std::cout << tui::string(Print::title_blackjack()).yellow() << "\n";
+    std::cout << color::red_fg() << "\t\tCards: " << deck.getSize() << color::green_fg()
+              << " \tCash: " << player.getCash() << color::magenta_fg() << " \tBet: " << player.getBet()
+              << color::blue_fg() << " \tName: " << player.getName() << style::reset_style() << "\n\n\n";
 }
 
 void Game::printBody() {
     printTop();
-    std::cout << lightRed << Print::dealer_border() << def;
+    std::cout << tui::string(Print::dealer_border()).red();
     dealer.printFirstCard();
-    std::cout << lightCyan << Print::player_border() << def;
+    std::cout << tui::string(Print::player_border()).cyan();
     player.printCards();
-    std::cout << lightGreen << "\nSum: " << lightRed << player.getSum() << def << "\n";
+    std::cout << color::green_fg() << "\nSum: " << color::red_fg() << player.getSum()
+              << style::reset_style() << "\n";
 }
