@@ -1,6 +1,7 @@
 #include "headers/game.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -107,18 +108,19 @@ bool Game::startBet() {
             printTop();
             std::cout << "Place your bet!\t\t $" << tui::string(this->player.getBet()).green()
                       << "\n[W = Raise Bet | S = Decrease Bet | R = Done]\n";
-            int c = toupper(read_ch());
-            switch (c) {
-                case 87:
+            switch (toupper(read_ch())) {
+                case 'W':
                     if (this->player.getCash() >= 5) {
                         this->player.setBet(5);
                     }
                     break;
-                case 83:
+                case 'S':
                     if (this->player.getBet() >= 5) {
                         this->player.setBet(-5);
                     }
                     break;
+                case 'R':
+                    return true;
                 default:
                     break;
             }
