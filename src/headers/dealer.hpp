@@ -1,12 +1,8 @@
-#ifndef DEALER_HPP
-#define DEALER_HPP
+#pragma once
 
 #include "human.hpp"
 
-class Dealer: public Human{
-
-    public:
-        void printFirstCard();
+class Dealer : public Human {
+   public:
+    void printFirstCard();
 };
-
-#endif

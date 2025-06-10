@@ -1,10 +1,8 @@
-#ifndef PRINT_HPP
-#define PRINT_HPP
+#pragma once
 
 #include <string>
 
-struct Print{
-
+struct Print {
     static std::string title_blackjack();
     static std::string begin_menu();
     static std::string statistics();
@@ -16,7 +14,4 @@ struct Print{
     static std::string draw();
     static std::string dealer_border();
     static std::string player_border();
-
 };
-
-#endif
