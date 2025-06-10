@@ -1,4 +1,9 @@
+#include <time.h>
+#include <iostream>
+
+#include "headers/blackjack.hpp"
 #include "game.hpp"
+#include "tui.hpp"
 
 int main() {
     Game game;                  // Constructs object GAME

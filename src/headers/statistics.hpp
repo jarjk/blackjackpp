@@ -4,6 +4,7 @@
 #include <string>
 
 #include "player.hpp"
+#include "tui.hpp"
 
 class PlayerSet {
    private:
