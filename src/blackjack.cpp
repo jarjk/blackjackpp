@@ -1,14 +1,8 @@
-#include "headers/blackjack.hpp"
-#include <iostream>
-#include <time.h>
+#include "game.hpp"
 
-int main(){
-
-    srand(time(NULL));          // To seed rand() function across all files
-
+int main() {
     Game game;                  // Constructs object GAME
     game.beginMenu(false, "");  // Begins with the interface
 
-    return 0;                   // Return integer value at end of main()
-
+    return 0;  // Return integer value at end of main()
 }

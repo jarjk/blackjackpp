@@ -1,23 +1,22 @@
-#ifndef PLAYER_HPP
-#define PLAYER_HPP
+#pragma once
 
-#include "human.hpp"
 #include <string>
 
-class Player: public Human{
+#include "human.hpp"
 
-private:
-    std::string name;        // Name of Player
-    int cash, bet;           // Player's Cash, Player's Bet
-    int wins, loses;         // Player's Stats (number of wins and loses)
+class Player : public Human {
+   private:
+    std::string name;  // Name of Player
+    int cash, bet;     // Player's Cash, Player's Bet
+    int wins, loses;   // Player's Stats (number of wins and loses)
 
-public:
+   public:
     Player();
     std::string getName();
-    int getBet();
-    int getCash();
-    int getWins();
-    int getLoses();
+    int getBet() const;
+    int getCash() const;
+    int getWins() const;
+    int getLoses() const;
     void setName(std::string nm);
     void setBet(int b);
     void addCash(int c);
@@ -25,5 +24,3 @@ public:
     void incrementLoses();
     void clearCards();
 };
-
-#endif
