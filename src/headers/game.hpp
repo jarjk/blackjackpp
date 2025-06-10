@@ -1,37 +1,33 @@
-#ifndef GAME_HPP
-#define GAME_HPP
+#pragma once
 
-#include "deck.hpp"
-#include "dealer.hpp"
-#include "player.hpp"
-#include "print.hpp"
-#include "statistics.hpp"
 #include <string>
 
-class Game{
+#include "dealer.hpp"
+#include "deck.hpp"
+#include "player.hpp"
+#include "statistics.hpp"
 
-    private:
-        Player player;   // Player in the game (user)
-        Dealer dealer;   // Dealer in the game
-        Deck deck;       // Deck of cards in the game
-        Statistics s;    // Leaderboard
+class Game {
+   private:
+    Player player;  // Player in the game (user)
+    Dealer dealer;  // Dealer in the game
+    Deck deck;      // Deck of cards in the game
+    Statistics s;   // Leaderboard
 
-    public:
-        Game();
-        bool dealDealer();
-        char compareSum();
-        bool checkWins();
-        char checkEnd();
-        bool startBet();
-        bool startGame();
-        void beginGame();
-        void beginMenu(bool rep, std::string message);
-        void saveGame();
-        void loadGame();
-        void printStatistics();
-        void printInstructions();
-        void printTop();
-        void printBody();
+   public:
+    Game();
+    bool dealDealer();
+    char compareSum();
+    bool checkWins();
+    char checkEnd();
+    bool startBet();
+    bool startGame();
+    void beginGame();
+    void beginMenu(bool rep, const std::string& message);
+    void saveGame();
+    void loadGame();
+    void printStatistics();
+    static void printInstructions();
+    void printTop();
+    void printBody();
 };
-
-#endif
