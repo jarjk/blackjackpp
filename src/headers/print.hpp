@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include "tui.hpp"
+
 #include "input.hpp"
+#include "tui.hpp"
 
 inline char read_ch() {
     tui::enable_raw_mode();
@@ -11,7 +12,7 @@ inline char read_ch() {
     return ch;
 }
 
-struct Print{
+struct Print {
     static std::string title_blackjack();
     static std::string begin_menu();
     static std::string statistics();
