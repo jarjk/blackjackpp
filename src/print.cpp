@@ -1,8 +1,8 @@
 #include "headers/print.hpp"
-#include <iostream>
+
 #include <sstream>
 
-std::string Print::title_blackjack(){
+std::string Print::title_blackjack() {
     constexpr auto title_blackjack = R"(
     /$$$$$$$ /$$       /$$$$$$   /$$$$$$ /$$   /$$    /$$$$$  /$$$$$$   /$$$$$$ /$$   /$$
    | $$__  $| $$      /$$__  $$ /$$__  $| $$  /$$/   |__  $$ /$$__  $$ /$$__  $| $$  /$$/
@@ -17,10 +17,9 @@ std::string Print::title_blackjack(){
     std::ostringstream toReturn;
     toReturn << title_blackjack;
     return toReturn.str();
-
 }
 
-std::string Print::begin_menu(){
+std::string Print::begin_menu() {
     constexpr auto begin_menu = R"(
             1 - Start a New Game
             2 - Load from Game
@@ -28,26 +27,26 @@ std::string Print::begin_menu(){
             4 - How to Play
             5 - Exit
     )";
-    
+
     std::ostringstream toReturn;
     toReturn << begin_menu;
     return toReturn.str();
 }
 
-std::string Print::statistics(){
+std::string Print::statistics() {
     constexpr auto statistics = R"(
      ____  ____  __  ____  __  ____  ____  __  ___  ____ 
     / ___)(_  _)/ _\(_  _)(  )/ ___)(_  _)(  )/ __)/ ___)
     \___ \  )( /    \ )(   )( \___ \  )(   )(( (__ \___ \
     (____/ (__)\_/\_/(__) (__)(____/ (__) (__)\___)(____/
     )";
-    
+
     std::ostringstream toReturn;
     toReturn << statistics << "\n\n";
     return toReturn.str();
 }
-    
-std::string Print::instructions(){
+
+std::string Print::instructions() {
     constexpr auto instructions = R"(
             .-"-._,-'_`-._,-'_`-._,-'_`-._,-'_`-,_,-'_`-,_,-'_`-,_,-'_`-,_,-'_`-,_,-'_`-,.
             (  ,-'_,-<.>-'_,-<.>-'_,-<.>-'_,-<.>-'_,-<.>-'_,-<.>-'_,-<.>-'_,-<.>-'_,-~-} ;.
@@ -86,7 +85,7 @@ std::string Print::instructions(){
     return toReturn.str();
 }
 
-std::string Print::bust(){
+std::string Print::bust() {
     constexpr auto bust = R"(
      ___            _    _ 
     | _ ) _  _  ___| |_ | |
@@ -99,7 +98,7 @@ std::string Print::bust(){
     return toReturn.str();
 }
 
-std::string Print::blackjack(){
+std::string Print::blackjack() {
     constexpr auto blackjack = R"(
      ___  _            _     _            _    _ 
     | _ )| | __ _  __ | |__ (_) __ _  __ | |__| |
@@ -113,7 +112,7 @@ std::string Print::blackjack(){
     return toReturn.str();
 }
 
-std::string Print::dealer_wins(){
+std::string Print::dealer_wins() {
     constexpr auto dealer_wins = R"(
      ___           _                  _           
     |   \ ___ __ _| |___ _ _  __ __ _(_)_ _  ___  
@@ -126,7 +125,7 @@ std::string Print::dealer_wins(){
     return toReturn.str();
 }
 
-std::string Print::you_win(){
+std::string Print::you_win() {
     constexpr auto you_win = R"(
     __   __                    _        _ 
     \ \ / /___  _  _  __ __ __(_) _ _  | |
@@ -139,7 +138,7 @@ std::string Print::you_win(){
     return toReturn.str();
 }
 
-std::string Print::draw(){
+std::string Print::draw() {
     constexpr auto draw = R"(
      ___            _     _ 
     | _ \ _  _  ___| |_  | |
@@ -152,7 +151,7 @@ std::string Print::draw(){
     return toReturn.str();
 }
 
-std::string Print::dealer_border(){
+std::string Print::dealer_border() {
     constexpr auto dealer_border = R"(
                      _  __ _     __ _ 
 /)/)/)/)/)/)/)/)/)  | \|_ |_||  |_ |_)  /)/)/)/)/)/)/)/)/)
@@ -164,7 +163,7 @@ std::string Print::dealer_border(){
     return toReturn.str();
 }
 
-std::string Print::player_border(){
+std::string Print::player_border() {
     constexpr auto player_border = R"(
                      _     _     __ _ 
 /)/)/)/)/)/)/)/)/)  |_)|  |_|\/ |_ |_)  /)/)/)/)/)/)/)/)/)
