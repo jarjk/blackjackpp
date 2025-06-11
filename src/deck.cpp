@@ -25,8 +25,8 @@ int Deck::getSize() { return static_cast<int>(this->deck.size()); }
 
 // Deals by returning one card from the deck
 Card Deck::deal() {
-    std::uniform_int_distribution<> dist(0, this->getSize());
-    int val = dist(rng::custom_random);
+    std::uniform_int_distribution<> rand_ix(0, this->getSize() - 1);
+    int val = rand_ix(rng::custom_random);
     Card t = this->deck.at(val);
     this->deck.erase(this->deck.begin() + val);
     return t;
