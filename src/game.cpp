@@ -5,12 +5,8 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <vector>
 
-#include "headers/color.hpp"
-#include "headers/compatible.hpp"
 #include "headers/print.hpp"
-#include "input.hpp"
 #include "print.hpp"
 #include "tui.hpp"
 
@@ -52,11 +48,10 @@ char Game::compareSum() {
         printTop();
         std::cout << tui::string(Print::dealer_wins()).red() << "\n    (" << this->dealer.getSum() << ")\n";
         return 'd';
-    } else {
-        printTop();
-        std::cout << tui::string(Print::draw()).magenta();
-        return 'n';
     }
+    printTop();
+    std::cout << tui::string(Print::draw()).magenta();
+    return 'n';
 }
 
 bool Game::checkWins() {
@@ -266,7 +261,7 @@ void Game::saveGame() {
     int nameSize = static_cast<int>(sName.size());
     f2.open(path, std::ios::in | std::ios::binary);
     if (!f2.fail()) {
-        char choice;
+        char choice = 0;
         std::cout << tui::string("File already exists.").red() << " Do you want to overwrite it? [Y/N]: ";
         std::cin >> choice;
         if (choice == 'N' || choice == 'n') {
@@ -275,11 +270,11 @@ void Game::saveGame() {
     }
     f2.close();
     f1.open(path, std::ios::out | std::ios::binary);
-    f1.write(reinterpret_cast<char*>(&nameSize), sizeof(nameSize));
+    f1.write(reinterpret_cast<char *>(&nameSize), sizeof(nameSize));
     f1.write(sName.c_str(), static_cast<int64_t>(sName.size()));
-    f1.write(reinterpret_cast<char*>(&sCash), sizeof(sCash));
-    f1.write(reinterpret_cast<char*>(&sWins), sizeof(sWins));
-    f1.write(reinterpret_cast<char*>(&sLoses), sizeof(sLoses));
+    f1.write(reinterpret_cast<char *>(&sCash), sizeof(sCash));
+    f1.write(reinterpret_cast<char *>(&sWins), sizeof(sWins));
+    f1.write(reinterpret_cast<char *>(&sLoses), sizeof(sLoses));
     f1.close();
 }
 
@@ -300,12 +295,12 @@ void Game::loadGame() {
         int sWins = 0;
         int sLoses = 0;
         int nameSize = 0;
-        f1.read(reinterpret_cast<char*>(&nameSize), sizeof(nameSize));
+        f1.read(reinterpret_cast<char *>(&nameSize), sizeof(nameSize));
         sName.resize(nameSize);
         f1.read(&sName.at(0), static_cast<int64_t>(sName.size()));
-        f1.read(reinterpret_cast<char*>(&sCash), sizeof(sCash));
-        f1.read(reinterpret_cast<char*>(&sWins), sizeof(sWins));
-        f1.read(reinterpret_cast<char*>(&sLoses), sizeof(sLoses));
+        f1.read(reinterpret_cast<char *>(&sCash), sizeof(sCash));
+        f1.read(reinterpret_cast<char *>(&sWins), sizeof(sWins));
+        f1.read(reinterpret_cast<char *>(&sLoses), sizeof(sLoses));
         f1.close();
         player.setName(sName);
         player.addCash(sCash - player.getCash());
