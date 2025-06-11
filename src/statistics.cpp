@@ -7,7 +7,6 @@
 #include <iostream>
 #include <utility>
 
-#include "headers/color.hpp"
 #include "tui.hpp"
 
 namespace color = tui::text::color;

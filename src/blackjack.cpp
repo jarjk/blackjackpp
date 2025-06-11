@@ -1,8 +1,6 @@
 #include <ctime>
-#include <iostream>
 
 #include "game.hpp"
-#include "tui.hpp"
 
 int main() {
     Game game;                  // Constructs object GAME
