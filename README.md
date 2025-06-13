@@ -9,7 +9,6 @@
 ## 🔧 Setup
 
 ### Cloning
-You should have [Git](https://git-scm.com/) installed and use the following commands in your terminal in your preferred directory
 ```sh
 git clone https://github.com/jeromeschmied/blackjackpp
 cd blackjackpp
@@ -19,8 +18,10 @@ cd blackjackpp
 
 #### Meson
 ```sh
-mkdir build; cd build
-meson ..          # generates build configuration (ninja)
+mkdir build; cd build # have a build dir
+meson setup ..    # generates build configuration (ninja)
 ninja             # builds the executable
-./blackjack       # viola!
+./blackjack       # voila!
 ```
+
+do the same in `src/client` or `src/server`
