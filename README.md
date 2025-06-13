@@ -1,7 +1,10 @@
 # ♠️ Blackjack (C++)
 
-> [!NOTE] forked from [ineshbose/Blackjack_CPP](https://github.com/ineshbose/Blackjack_CPP)
-> [!NOTE] WIP, idea is to have multiplayer mode via webserver
+> [!NOTE]
+> forked from [ineshbose/Blackjack_CPP](https://github.com/ineshbose/Blackjack_CPP)
+
+> [!NOTE]
+> WIP, idea is to have multiplayer mode via webserver
 
 ## 🔧 Setup
 
