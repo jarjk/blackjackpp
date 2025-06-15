@@ -68,19 +68,17 @@ class GameManager {
         crow::json::wvalue res;
 
         res["status"] = (status == WAITING) ? "waiting" : "in_progress";
-        // int idx = 0;
         for (auto& [id, p] : players) {
-            // res["players"][idx]["id"] = id;
-            // res["games"][id]["name"] = p.game.player.getName();
             res["games"][id]["bet"] = p.game.player.getBet();
             res["games"][id]["cash"] = p.game.player.getCash();
             res["games"][id]["loses"] = p.game.player.getLoses();
             res["games"][id]["wins"] = p.game.player.getWins();
             res["games"][id]["hand"] = p.game.player.dbg_cards();
+            res["games"][id]["dealer"] = p.game.dealer.dbg_cards(); // TODO: secret
 
-            if (p.game.checkWins()) {
-                res["games"][id]["dealers_hand"] = p.game.dealer.dbg_cards();
-                res["games"][id]["winner"] = std::format("{}", p.game.checkEnd());
+            if (p.game.getWinner() != 'f') {
+                // res["games"][id]["dealers_hand"] = p.game.dealer.dbg_cards();
+                res["games"][id]["winner"] = std::format("{}", p.game.getWinner());
             }
             // res["players"][idx]["move_made"] = p.game.player.getMoveMade();
             // res["players"][idx]["waiting"] = p.game.player.getIsWaiting();
