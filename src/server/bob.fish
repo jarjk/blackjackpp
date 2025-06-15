@@ -1,5 +1,9 @@
 #!/usr/bin/env fish
-set addr "localhost:18080"
+if test "$argv[1]" = ""
+    set addr "http://localhost:18080"
+else
+    set addr "$argv[1]"
+end
 set uname bob
 
 function GET
@@ -21,8 +25,6 @@ end
 GET "join?username=$uname"
 
 POST "bet/$uname?amount=400"
-
-# GET game_state
 
 read -P 'action: ' action
 POST "move/$uname?action=$action"
