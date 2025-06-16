@@ -24,7 +24,7 @@ end
 
 GET "join?username=$uname"
 
-POST "bet/$uname?amount=400"
+POST "bet/$uname?amount=100"
 
 read -P 'action: ' action
 POST "move/$uname?action=$action"
