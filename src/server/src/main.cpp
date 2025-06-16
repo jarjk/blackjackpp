@@ -39,9 +39,9 @@ crow::response bet(const crow::request& req, const std::string& name) {
     const char* amount_s = req.url_params.get("amount");
     int amount = 0;
     // clang-format off
-            try { amount = std::stoi(amount_s); } catch (...) { }
+    try { amount = std::stoi(amount_s); } catch (...) { }
     // clang-format on
-    if (amount_s == nullptr || amount == 0) {
+    if (amount_s == nullptr || amount == 0 || amount > player.getCash()) {
         return {400, "missing or incorrect amount of bet"};
     }
 
