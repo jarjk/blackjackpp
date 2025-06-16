@@ -76,7 +76,7 @@ class GameManager {
             res["games"][id]["hand"] = p.game.player.getHandJson();
 
             auto has_ended = false;
-            if (p.game.getWinner() != 'f') {
+            if (p.game.hasEnded()) {
                 // res["games"][id]["dealers_hand"] = p.game.dealer.dbg_cards();
                 has_ended = true;
                 res["games"][id]["winner"] = std::format("{}", p.game.getWinner());

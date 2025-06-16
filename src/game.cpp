@@ -23,7 +23,7 @@ bool Game::dealDealer() {
     // if (this->dealer.getSum() < this->player.getSum()) {
     while (this->dealer.getSum() < 17) {
         this->deal1_dealer();
-        if (this->getWinner() != 'f') {
+        if (this->hasEnded()) {
             return false;
         }
     }

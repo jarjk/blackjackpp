@@ -22,6 +22,7 @@ class Game {
     Card deal1() { return this->deck.deal(); }
     bool dealDealer();
     char compareSum();
+    bool hasEnded() { return this->getWinner() != 'f'; }
     bool handleWins();
     char getWinner();
     bool startBet();

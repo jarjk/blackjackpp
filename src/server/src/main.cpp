@@ -34,7 +34,7 @@ int main() {
         .methods("POST"_method)([](const crow::request& req, const std::string& name) {
             auto& game = manager.players[name].game;
             auto& player = game.player;
-            if (!game.player.getHand().empty() && game.getWinner() == 'f') {
+            if (!game.player.getHand().empty() && !game.hasEnded()) {
                 return crow::response(400, "dont bet during zhe game");
             }
 
@@ -61,7 +61,7 @@ int main() {
             crow::json::wvalue res;
             res["cash"] = player.getCash();
             res["hand"] = player.getHandJson();
-            res["dealer"] = game.dealer.getHandJson(game.getWinner() == 'f');
+            res["dealer"] = game.dealer.getHandJson(!game.hasEnded());
             res["winner"] = std::format("{}", game.getWinner());
             return crow::response(res);
         });
@@ -75,7 +75,7 @@ int main() {
             }
             std::string action_s = std::string(action);
             auto& game = manager.players[username].game;
-            if (game.getWinner() != 'f' || game.player.getBet() == 0) {
+            if (game.hasEnded() || game.player.getBet() == 0) {
                 return crow::response(400, "game finished or forgot to bet");
             }
             if (action_s == "hit" || action_s == "h") {
