@@ -12,13 +12,13 @@
 GameManager manager;
 
 crow::response join(const crow::request& req) {
-    const char* username = req.url_params.get("username");
-    if (username == nullptr) {
+    const char* uname = req.url_params.get("username");
+    if (uname == nullptr) {
         return {400, "missing username"};
     }
     manager.lock();
 
-    auto [p, joined_already] = manager.join_game(username);
+    auto [p, joined_already] = manager.join_game(uname);
     if (joined_already) {
         return {400, "already joined"};
     }
@@ -26,13 +26,14 @@ crow::response join(const crow::request& req) {
     return {};  // ok
 }
 
-crow::response bet(const crow::request& req, const std::string& name) {
-    if (!manager.already_joined(name)) {
+crow::response bet(const crow::request& req, const std::string& uname) {
+    manager.lock();
+    if (!manager.already_joined(uname)) {
         return {400, "not joined"};
     }
-    auto& game = manager.players[name].game;
+    auto& game = manager.players[uname].game;
     auto& player = game.player;
-    if (!game.player.getHand().empty() && !game.hasEnded()) {
+    if (!player.getHand().empty() && !game.hasEnded()) {
         return {400, "dont bet during zhe game"};
     }
 
@@ -45,7 +46,7 @@ crow::response bet(const crow::request& req, const std::string& name) {
         return {400, "missing or incorrect amount of bet"};
     }
 
-    game.player.clearCards();  // reset game
+    player.clearCards();  // reset game
     game.dealer.clearCards();
     player.setBet(amount);
     std::cerr << "new game\n";
@@ -60,17 +61,18 @@ crow::response bet(const crow::request& req, const std::string& name) {
     res["cash"] = player.getCash();
     res["hand"] = player.getHandJson();
     res["dealer"] = game.dealer.getHandJson(!game.hasEnded());
-    res["winner"] = std::format("{}", game.getWinner());
-    return crow::response(res);
+    res["winner"] = std::to_string(game.getWinner());
+    return {res};
 }
 
-crow::response make_move(const crow::request& req, const std::string& username) {
+crow::response make_move(const crow::request& req, const std::string& uname) {
+    manager.lock();
     const char* action = req.url_params.get("action");
     if (action == nullptr) {
         return {400, "missing action parameter"};
     }
     std::string action_s = std::string(action);
-    auto& game = manager.players[username].game;
+    auto& game = manager.players[uname].game;
     if (game.hasEnded() || game.player.getBet() == 0) {
         return {400, "game finished or forgot to bet"};
     }
@@ -84,13 +86,13 @@ crow::response make_move(const crow::request& req, const std::string& username) 
         return {400, "should 'hit' or 'stand'"};
     }
     crow::json::wvalue res;
-    res["hand"] = game.player.getHandJson();
     bool has_ended = false;
     // if has ended, updates player status
     if (game.handleWins()) {
         has_ended = true;
-        res["winner"] = std::format("{}", game.getWinner());
+        res["winner"] = std::to_string(game.getWinner());
     }
+    res["hand"] = game.player.getHandJson();
     res["dealer"] = game.dealer.getHandJson(!has_ended);
     return res;
 }
