@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <random>
 
 #include "headers/random.hpp"
 
@@ -25,9 +24,7 @@ int Deck::getSize() { return static_cast<int>(this->deck.size()); }
 
 // Deals by returning one card from the deck
 Card Deck::deal() {
-    std::uniform_int_distribution<> rand_ix(0, this->getSize() - 1);
-    int val = rand_ix(rng::custom_random);
-    Card t = this->deck.at(val);
-    this->deck.erase(this->deck.begin() + val);
+    Card t = this->deck.back();
+    this->deck.pop_back();
     return t;
 }
