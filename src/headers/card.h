@@ -2,6 +2,8 @@
 
 #include <format>
 #include <string>
+
+#include "crow/json.h"
 #include "nlohmann/json.hpp"
 
 class Card {
@@ -28,8 +30,12 @@ class Card {
     char getPrintNumber() const;
     void printCardL1() const;
     void printCardL2() const;
-    std::string dbg() const {
-        return std::format("{{number: {}, suit: {}, block: {}, }}", this->number, this->suit, this->block);
+    crow::json::wvalue toJson() const {
+        crow::json::wvalue card_json;
+        card_json["number"] = number;
+        card_json["suit"] = std::format("{}", suit);
+        card_json["block"] = block;
+        return card_json;
     }
 };
 

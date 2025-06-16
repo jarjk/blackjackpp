@@ -1,163 +1,121 @@
 #include <cctype>
 #include <iostream>
 #include <string>
-#include <thread>
 
 #include "crow/app.h"
+#include "crow/http_request.h"
 #include "crow/http_response.h"
 #include "crow/json.h"
-#include "crow/logging.h"
 #include "gameManager.hpp"
 #include "print.hpp"
 
 GameManager manager;
 
-void gameloop();
+crow::response join(const crow::request& req) {
+    const char* uname = req.url_params.get("username");
+    if (uname == nullptr) {
+        return {400, "missing username"};
+    }
+    manager.lock();
+
+    auto [p, joined_already] = manager.join_game(uname);
+    if (joined_already) {
+        return {400, "already joined"};
+    }
+
+    return {};  // ok
+}
+
+crow::response bet(const crow::request& req, const std::string& uname) {
+    manager.lock();
+    if (!manager.already_joined(uname)) {
+        return {400, "not joined"};
+    }
+    auto& game = manager.players[uname].game;
+    auto& player = game.player;
+    if (!player.getHand().empty() && !game.hasEnded()) {
+        return {400, "dont bet during zhe game"};
+    }
+
+    const char* amount_s = req.url_params.get("amount");
+    int amount = 0;
+    // clang-format off
+    try { amount = std::stoi(amount_s); } catch (...) { }
+    // clang-format on
+    if (amount_s == nullptr || amount == 0 || amount > player.getCash()) {
+        return {400, "missing or incorrect amount of bet"};
+    }
+
+    player.clearCards();  // reset game
+    game.dealer.clearCards();
+    player.setBet(amount);
+    std::cerr << "new game\n";
+
+    // dealing starting cards
+    game.deal1_dealer();
+    game.deal1_player();
+    game.deal1_dealer();
+    game.deal1_player();
+
+    crow::json::wvalue res;
+    res["cash"] = player.getCash();
+    res["hand"] = player.getHandJson();
+    res["dealer"] = game.dealer.getHandJson(!game.hasEnded());
+    res["winner"] = std::to_string(game.getWinner());
+    return {res};
+}
+
+crow::response make_move(const crow::request& req, const std::string& uname) {
+    manager.lock();
+    const char* action = req.url_params.get("action");
+    if (action == nullptr) {
+        return {400, "missing action parameter"};
+    }
+    std::string action_s = std::string(action);
+    auto& game = manager.players[uname].game;
+    if (game.hasEnded() || game.player.getBet() == 0) {
+        return {400, "game finished or forgot to bet"};
+    }
+    if (action_s == "hit" || action_s == "h") {
+        game.deal1_player();
+    } else if (action_s == "stand" || action_s == "s") {
+        std::cerr << "standing...\n";
+        game.player.setStood(true);
+        game.dealDealer();
+    } else {
+        return {400, "should 'hit' or 'stand'"};
+    }
+    crow::json::wvalue res;
+    bool has_ended = false;
+    // if has ended, updates player status
+    if (game.handleWins()) {
+        has_ended = true;
+        res["winner"] = std::to_string(game.getWinner());
+    }
+    res["hand"] = game.player.getHandJson();
+    res["dealer"] = game.dealer.getHandJson(!has_ended);
+    return res;
+}
 
 int main() {
     crow::SimpleApp app;
-    // manager.dealDealer();
-    // 
-    // GET /quit?username=...
-    CROW_ROUTE(app, "/quit").methods("GET"_method)([](const crow::request& req) {
-        const char* username = req.url_params.get("username");
-        if (!username) {
-            return crow::response(400, "Missing username");
-        }
-        manager.lock();
-        manager.players.erase(username);
-
-        crow::json::wvalue res;
-        res["deleted_user"] = username;
-
-        return crow::response(res);
-    });
 
     // GET /join?username=...
-    CROW_ROUTE(app, "/join").methods("GET"_method)([](const crow::request& req) {
-        const char* username = req.url_params.get("username");
-        if (!username) {
-            return crow::response(400, "Missing username");
-        }
-        manager.lock();
+    CROW_ROUTE(app, "/join").methods("GET"_method)(join);
 
-        auto [p, joined_already] = manager.join_game(username);
-        if (joined_already) {
-            return crow::response(400, "already joined");
-        }
-        // manager[p]
-        // p->game.dealDealer();
-        p->game.deal1_dealer();
-        p->game.deal1_player();
-        p->game.deal1_dealer();
-        p->game.deal1_player();
-        // p->game.checkWins();
-        // p->addCard(manager.game.deal1());
+    // POST /bet/<username>?amount=<int>
+    CROW_ROUTE(app, "/bet/<string>").methods("POST"_method)(bet);
 
-        crow::json::wvalue res;
-        // res["player_id"] = p->getId();
-        res["name"] = p->game.player.getName();
-        // res["waiting"] = p->getIsWaiting();
-        // res["cards"] = p->game.player.dbg_cards();
-        return crow::response(res);
-    });
-
-    // // POST /bet?player_id=...
-    // CROW_ROUTE(app, "/bet/<string>")
-    //     .methods("POST"_method)([](const crow::request& req, const std::string name) {
-    //         const char* amount_s = req.url_params.get("amount");
-    //         if (!amount_s) {
-    //             return crow::response(400, "missing amount of bet");
-    //         }
-    //         int amount = std::stoi(amount_s);
-    //         auto& player = manager.players[name].game.player;
-    //         player.setBet(amount);
-
-    //         crow::json::wvalue res;
-    //         // res["ok"] = true;
-    //         res["cash"] = player.getBet();
-    //         return crow::response(res);
-    //     });
-    
-    // GET /sync?player_id=...
-    CROW_ROUTE(app, "/sync/<string>")
-        .methods("GET"_method)([](const crow::request& req, const std::string uname) {
-            const char* username = req.url_params.get("username");
-            if (!username) {
-                return crow::response(400, "missing username");
-            }
-            auto& player = manager.players[uname].game.player;
-
-            crow::json::wvalue res;
-            // res["ok"] = true;
-            res["cash"] = player.getBet();
-            return crow::response(res);
-        });
-
-    // POST /move?player_id=...
-    CROW_ROUTE(app, "/move/<string>")
-        .methods("POST"_method)([](const crow::request& req, const std::string& name) {
-            const char* action = req.url_params.get("action");
-            if (!action) {
-                return crow::response(400, "action");
-            }
-            std::string action_s = std::string(action);
-            auto& game = manager.players[name].game;
-            if (game.checkWins()) {
-                return crow::response(400, "game finished");
-            }
-            if (action_s == "hit") {
-                game.deal1_dealer();
-                game.deal1_player();
-            } else if (action_s == "stand") {
-                std::cout << "standing...";
-            } else {
-                return crow::response(400, "should 'hit' or 'stand'");
-            }
-            crow::json::wvalue res;
-            if (game.checkWins()) {
-                res["winner"] = std::format("{}", game.checkEnd());
-            }
-
-            // manager.player_move(pid);
-
-            res["ok"] = true;
-            return crow::response(res);
-        });
+    // POST /move/<username>?action=[hit, stand]
+    CROW_ROUTE(app, "/move/<string>").methods("POST"_method)(make_move);
 
     // GET /game_state
-    CROW_ROUTE(app, "/game_state").methods("GET"_method)([](const crow::request&) {
+    CROW_ROUTE(app, "/game_state").methods("GET"_method)([]() {
         return crow::response(manager.get_game_state());
     });
 
     // GET /help
-    CROW_ROUTE(app, "/help").methods("GET"_method)([](const crow::request&) {
-        return crow::response(Print::instructions());
-    });
+    CROW_ROUTE(app, "/help").methods("GET"_method)([]() { return crow::response(Print::instructions()); });
 
-    auto server = [&app]() { app.loglevel(crow::LogLevel::WARNING).port(18080).multithreaded().run(); };
-    std::thread server_thread(server);
-
-    gameloop();
-
-    server_thread.join();
-}
-
-void gameloop() {
-    std::cout << "start game loop\n";
-    char ch = 0;
-    do {
-        // for (const auto &x : manager.get_game_state());
-        for (const auto& [id, p] : manager.players) {
-            std::cout << "waiting for bet from: " << p.game.player.getName() << "\n";
-            if (p.game.player.getBet() != 0) {
-                std::cout << "got bet.";
-            }
-            // manager.game.beginGame();
-        }
-        std::cout << "cycled, reading:\n";
-        ch = read_ch();
-    } while (ch != 'q' && ch != 3);
-
-    std::cout << "end game loop\n";
+    app.port(18080).multithreaded().run();
 }
