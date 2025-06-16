@@ -59,8 +59,8 @@ int main() {
 
             crow::json::wvalue res;
             res["cash"] = player.getCash();
-            res["hand"] = player.dbg_cards();
-            res["dealer"] = game.dealer.dbg_cards();  // TODO: don't print all the cards
+            res["hand"] = player.getHandJson();
+            res["dealer"] = game.dealer.getHandJson();  // TODO: don't print all the cards
             res["winner"] = std::format("{}", game.getWinner());
             return crow::response(res);
         });

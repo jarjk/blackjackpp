@@ -73,8 +73,8 @@ class GameManager {
             res["games"][id]["cash"] = p.game.player.getCash();
             res["games"][id]["loses"] = p.game.player.getLoses();
             res["games"][id]["wins"] = p.game.player.getWins();
-            res["games"][id]["hand"] = p.game.player.dbg_cards();
-            res["games"][id]["dealer"] = p.game.dealer.dbg_cards(); // TODO: secret
+            res["games"][id]["hand"] = p.game.player.getHandJson();
+            res["games"][id]["dealer"] = p.game.dealer.getHandJson(); // TODO: secret
 
             if (p.game.getWinner() != 'f') {
                 // res["games"][id]["dealers_hand"] = p.game.dealer.dbg_cards();
