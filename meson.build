@@ -19,7 +19,7 @@ git = find_program('git', required: true)
 
 if not fs.exists(cpptui_dir)
   message('Cloning cpptui at master...')
-  run_command(git, 'clone', 'https://github.com/csboo/cpptui', cpptui_dir, check: true)
+  run_command(git, 'clone', 'https://github.com/csboo/cpptui', '--depth=1', cpptui_dir, check: true)
 else
   message('Cpptui exists!')
 endif
