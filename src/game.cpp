@@ -22,7 +22,7 @@ Game::Game() { this->deck.initializeDeck(); }
 bool Game::dealDealer() {
     // if (this->dealer.getSum() < this->player.getSum()) {
     while (this->dealer.getSum() < 17) {
-        this->dealer.addCard(this->deck.deal());
+        this->deal1_dealer();
         if (this->getWinner() != 'f') {
             return false;
         }
