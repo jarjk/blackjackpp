@@ -61,7 +61,7 @@ int main() {
             crow::json::wvalue res;
             res["cash"] = player.getCash();
             res["hand"] = player.getHandJson();
-            res["dealer"] = game.dealer.getHandJson();  // TODO: don't print all the cards
+            res["dealer"] = game.dealer.getHandJson(game.getWinner() == 'f');
             res["winner"] = std::format("{}", game.getWinner());
             return crow::response(res);
         });
@@ -88,10 +88,14 @@ int main() {
                 return crow::response(400, "should 'hit' or 'stand'");
             }
             crow::json::wvalue res;
+            res["hand"] = game.player.getHandJson();
+            bool has_ended = false;
             // if has ended, updates player status
             if (game.handleWins()) {
+                has_ended = true;
                 res["winner"] = std::format("{}", game.getWinner());
             }
+            res["dealer"] = game.dealer.getHandJson(!has_ended);
             return crow::response(res);
         });
 

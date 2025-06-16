@@ -15,17 +15,24 @@ class Human {
     Human();
     std::vector<Card> getHand() const { return this->hand; }
 
-    crow::json::wvalue getHandJson() {
+    crow::json::wvalue getHandJson(const bool dealer_secret = false) {
         crow::json::wvalue hand_json;
-
         std::vector<crow::json::wvalue> cards_vector;
-        cards_vector.reserve(this->hand.size());
-        for (const auto& c : this->hand) {
-            cards_vector.push_back(c.toJson());
-        }
+        int sum = this->getSum();
 
+        if (dealer_secret) {
+            auto first_card = this->hand[0];
+            cards_vector.push_back(first_card.toJson());
+            Human tmp_d;
+            tmp_d.addCard(first_card);
+            sum = tmp_d.getSum(); // overwrite
+        } else {
+            for (const auto& c : this->hand) {
+                cards_vector.push_back(c.toJson());
+            }
+        }
         hand_json["cards"] = std::move(cards_vector);
-        hand_json["sum"] = this->getSum();
+        hand_json["sum"] = sum;
 
         return hand_json;
     }

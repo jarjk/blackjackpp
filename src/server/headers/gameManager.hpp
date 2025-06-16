@@ -74,12 +74,14 @@ class GameManager {
             res["games"][id]["loses"] = p.game.player.getLoses();
             res["games"][id]["wins"] = p.game.player.getWins();
             res["games"][id]["hand"] = p.game.player.getHandJson();
-            res["games"][id]["dealer"] = p.game.dealer.getHandJson(); // TODO: secret
 
+            auto has_ended = false;
             if (p.game.getWinner() != 'f') {
                 // res["games"][id]["dealers_hand"] = p.game.dealer.dbg_cards();
+                has_ended = true;
                 res["games"][id]["winner"] = std::format("{}", p.game.getWinner());
             }
+            res["games"][id]["dealer"] = p.game.dealer.getHandJson(!has_ended);
             // res["players"][idx]["move_made"] = p.game.player.getMoveMade();
             // res["players"][idx]["waiting"] = p.game.player.getIsWaiting();
             // idx++;
