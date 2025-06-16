@@ -32,6 +32,9 @@ int main() {
     // POST /bet/<username>?amount=<int>
     CROW_ROUTE(app, "/bet/<string>")
         .methods("POST"_method)([](const crow::request& req, const std::string& name) {
+            if (!manager.already_joined(name)) {
+                return crow::response(400, "not joined");
+            }
             auto& game = manager.players[name].game;
             auto& player = game.player;
             if (!game.player.getHand().empty() && !game.hasEnded()) {

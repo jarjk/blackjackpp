@@ -1,5 +1,5 @@
+#include <algorithm>
 #include <mutex>
-#include <random>
 #include <string>
 #include <unordered_map>
 
@@ -42,15 +42,18 @@ class GameManager {
     //     }
     //     return id;
     // }
+    bool already_joined(const std::string& uname) const {
+        // Check if player already exists
+        return std::ranges::any_of(this->players, [&uname](const std::pair<std::string, ServerGame>& x) {
+            return x.first == uname || uname == "dealer";
+        });
+    }
 
     std::pair<ServerGame*, bool> join_game(const std::string& name) {
         this->lock();
 
-        // Check if player already exists
-        for (auto& [id, player] : this->players) {
-            if (player.game.player.getName() == name) {
-                return {&player, true};
-            }
+        if (this->already_joined(name)) {
+            return {&players[name], true};
         }
 
         // Add new player
