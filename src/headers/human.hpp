@@ -20,7 +20,7 @@ class Human {
         std::vector<crow::json::wvalue> cards_vector;
         int sum = this->getSum();
 
-        if (dealer_secret) {
+        if (dealer_secret && !this->hand.empty()) {
             auto first_card = this->hand[0];
             cards_vector.push_back(first_card.toJson());
             Human tmp_d;

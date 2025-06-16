@@ -42,11 +42,10 @@ class GameManager {
     //     }
     //     return id;
     // }
+
+    // check if player already exists
     bool already_joined(const std::string& uname) const {
-        // Check if player already exists
-        return std::ranges::any_of(this->players, [&uname](const std::pair<std::string, ServerGame>& x) {
-            return x.first == uname || uname == "dealer";
-        });
+        return std::ranges::any_of(this->players, [&uname](const auto& x) { return x.first == uname; });
     }
 
     std::pair<ServerGame*, bool> join_game(const std::string& name) {
