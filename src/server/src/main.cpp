@@ -32,6 +32,12 @@ int main() {
     // POST /bet/<username>?amount=<int>
     CROW_ROUTE(app, "/bet/<string>")
         .methods("POST"_method)([](const crow::request& req, const std::string& name) {
+            auto& game = manager.players[name].game;
+            auto& player = game.player;
+            if (!game.player.getHand().empty() && game.getWinner() == 'f') {
+                return crow::response(400, "dont bet during zhe game");
+            }
+
             const char* amount_s = req.url_params.get("amount");
             int amount = 0;
             // clang-format off
@@ -40,12 +46,7 @@ int main() {
             if (!amount_s || amount == 0) {
                 return crow::response(400, "missing or incorrect amount of bet");
             }
-            auto& game = manager.players[name].game;
-            auto& player = game.player;
 
-            if (!game.player.getHand().empty() && game.getWinner() == 'f') {
-                return crow::response(400, "dont bet during zhe game");
-            }
             game.player.clearCards();  // reset game
             game.dealer.clearCards();
             player.setBet(amount);
