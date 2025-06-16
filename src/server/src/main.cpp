@@ -70,12 +70,12 @@ int main() {
         .methods("POST"_method)([](const crow::request& req, const std::string& username) {
             const char* action = req.url_params.get("action");
             if (!action) {
-                return crow::response(400, "action");
+                return crow::response(400, "missing action parameter");
             }
             std::string action_s = std::string(action);
             auto& game = manager.players[username].game;
-            if (game.getWinner() != 'f') {
-                return crow::response(400, "game finished");
+            if (game.getWinner() != 'f' || game.player.getBet() == 0) {
+                return crow::response(400, "game finished or forgot to bet");
             }
             if (action_s == "hit" || action_s == "h") {
                 game.deal1_player();
