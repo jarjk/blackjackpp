@@ -61,7 +61,7 @@ crow::response bet(const crow::request& req, const std::string& uname) {
     res["cash"] = player.getCash();
     res["hand"] = player.getHandJson();
     res["dealer"] = game.dealer.getHandJson(!game.hasEnded());
-    res["winner"] = std::to_string(game.getWinner());
+    res["winner"] = std::format("{}", game.getWinner());
     return {res};
 }
 
@@ -90,7 +90,7 @@ crow::response make_move(const crow::request& req, const std::string& uname) {
     // if has ended, updates player status
     if (game.handleWins()) {
         has_ended = true;
-        res["winner"] = std::to_string(game.getWinner());
+        res["winner"] = std::format("{}", game.getWinner());
     }
     res["hand"] = game.player.getHandJson();
     res["dealer"] = game.dealer.getHandJson(!has_ended);
