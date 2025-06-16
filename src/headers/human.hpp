@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "card.h"
-#include "crow/json.h"
 
 class Human {
    protected:
@@ -13,21 +12,20 @@ class Human {
 
    public:
     Human();
-    std::vector<Card> getHand() const { return this->hand; }
-
-    crow::json::wvalue getHandJson() {
-        crow::json::wvalue hand_json;
-
-        std::vector<crow::json::wvalue> cards_vector;
-        cards_vector.reserve(this->hand.size());
-        for (const auto& c : this->hand) {
-            cards_vector.push_back(c.toJson());
+    void setAllCards(const std::vector<Card>& manycards) {
+        this->clearCards();
+        for (const auto& card : manycards) {
+            this->addCard(card);
         }
-
-        hand_json["cards"] = std::move(cards_vector);
-        hand_json["sum"] = this->getSum();
-
-        return hand_json;
+    };
+    std::vector<Card> getHand() const { return this->hand; }
+    std::string dbg_cards() const {
+        std::string tmp;
+        for (const auto &c : this->hand) {
+            tmp += c.dbg() + ',';
+        }
+        tmp += std::format("sum: {}", this->sum);
+        return tmp;
     }
     int getSum();
     void switchAce();

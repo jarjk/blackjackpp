@@ -22,8 +22,8 @@ class Game {
     Card deal1() { return this->deck.deal(); }
     bool dealDealer();
     char compareSum();
-    bool handleWins();
-    char getWinner();
+    bool checkWins();
+    char checkEnd();
     bool startBet();
     bool startGame();
     void beginGame();

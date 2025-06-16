@@ -1,30 +1,22 @@
 #!/usr/bin/env fish
-if test "$argv[1]" = ""
-    set addr "http://localhost:18080"
-else
-    set addr "$argv[1]"
-end
+set addr "localhost:18080"
 set uname bob
 
 function GET
-    set resp (curl --silent "$addr/$argv[1]")
-    if not echo $resp | jq
-        echo $resp
-    end
+    curl --silent "$addr/$argv[1]" | jq
     echo
 end
 
 function POST
-    set resp (curl --silent -XPOST "$addr/$argv[1]")
-    if not echo $resp | jq
-        echo $resp
-    end
+    curl --silent -XPOST "$addr/$argv[1]"
     echo
 end
 
 GET "join?username=$uname"
 
 POST "bet/$uname?amount=400"
+
+GET game_state
 
 read -P 'action: ' action
 POST "move/$uname?action=$action"

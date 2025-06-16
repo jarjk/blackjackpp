@@ -21,11 +21,9 @@ std::string Print::title_blackjack() {
 
 std::string Print::begin_menu() {
     constexpr auto begin_menu = R"(
-            1 - Start a New Game
-            2 - Load from Game
-            3 - Statistics
-            4 - How to Play
-            5 - Exit
+            1 - Join Game
+            2 - How to Play
+            q - Exit
     )";
 
     std::ostringstream toReturn;

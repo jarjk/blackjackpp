@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "client/headers/utils.hpp"
 #include "headers/print.hpp"
 #include "print.hpp"
 #include "tui.hpp"
@@ -20,44 +21,45 @@ Game::Game() { this->deck.initializeDeck(); }
 //////////////* Deals dealer towards the end *////
 
 bool Game::dealDealer() {
-    // if (this->dealer.getSum() < this->player.getSum()) {
-    while (this->dealer.getSum() < 17) {
-        this->dealer.addCard(this->deck.deal());
-        if (this->getWinner() != 'f') {
-            return false;
+    if (this->dealer.getSum() < this->player.getSum()) {
+        while (this->dealer.getSum() < 17) {
+            this->dealer.addCard(this->deck.deal());
+            if (checkWins()) {
+                return false;
+            }
         }
+        return true;
+    }
+    if (checkWins()) {
+        return false;
     }
     return true;
-    // }
-    // if (checkWins()) {
-    //     return false;
-    // }
-    // return true;
 }
 
 //////////////* Checkers *////
 
 char Game::compareSum() {
+    tui::screen::clear();
+    tui::cursor::home();
     if (this->player.getSum() > this->dealer.getSum()) {
         // printTop();
-        // std::cout << tui::string(Print::you_win()).yellow() << style::reset_style() << "\n    (Dealer has
-        // "
-        // << this->dealer.getSum() << ")\n";
+        std::cout << tui::string(utils::raw_mode_converter(Print::you_win())).yellow();
+        // "\n    (Dealer has" << this->dealer.getSum() << ")\n";
         return 'p';
     }
     if (this->dealer.getSum() > this->player.getSum()) {
         // printTop();
-        // std::cout << tui::string(Print::dealer_wins()).red() << "\n    (" << this->dealer.getSum() <<
-        // ")\n";
+        std::cout << tui::string(utils::raw_mode_converter(Print::dealer_wins())).red();
+        // << "\n    (" << this->dealer.getSum() << ")\n";
         return 'd';
     }
     // printTop();
-    // std::cout << tui::string(Print::draw()).magenta();
+    std::cout << tui::string(utils::raw_mode_converter(Print::draw())).magenta();
     return 'n';
 }
 
-bool Game::handleWins() {
-    switch (getWinner()) {
+bool Game::checkWins() {
+    switch (checkEnd()) {
         case 'f':
             return false;
         case 'd':
@@ -67,48 +69,33 @@ bool Game::handleWins() {
             this->player.incrementWins();
             this->player.addCash((this->player.getBet() * 2));
             return true;
-        case 'e':
-            this->player.addCash(this->player.getBet());
-            return true;
         default:
             return false;
     }
 }
 
-// 'f': false, 'p': player, 'd': dealer, 'e': equals
-char Game::getWinner() {
-    auto dealer_sum = this->dealer.getSum();
-    auto player_sum = this->player.getSum();
-
-    if (dealer_sum > 21 || player_sum > 21) {
+char Game::checkEnd() {
+    if (this->dealer.getSum() > 21 || this->player.getSum() > 21) {
         // printTop();
-        // std::cout << tui::string(Print::bust()).red() << "\n    [Dealer : " << dealer_sum
-        // << " | " << this->player.getName() << " : " << player_sum << "]\n";
-        if (dealer_sum > 21) {
+        // std::cout << tui::string(Print::bust()).red() << "\n    [Dealer : " << this->dealer.getSum()
+        // << " | " << this->player.getName() << " : " << this->player.getSum() << "]\n";
+        if (this->dealer.getSum() > 21) {
             return 'p';
         }
-        if (player_sum > 21) {
+        if (this->player.getSum() > 21) {
             return 'd';
         }
-    } else if (dealer_sum == 21 || player_sum == 21) {
+    } else if (this->dealer.getSum() == 21 || this->player.getSum() == 21) {
         // printTop();
         // std::cout << tui::string(Print::blackjack()).green() << "\n    [Dealer : " <<
-        // dealer_sum
-        // << " | " << this->player.getName() << " : " << player_sum << "]\n";
-        if (dealer_sum == 21) {
+        // this->dealer.getSum()
+        // << " | " << this->player.getName() << " : " << this->player.getSum() << "]\n";
+        if (this->dealer.getSum() == 21) {
             return 'd';
         }
-        if (player_sum == 21) {
+        if (this->player.getSum() == 21) {
             return 'p';
         }
-    } else if (dealer_sum >= 17 && this->player.getStood()) {
-        if (dealer_sum < player_sum) {
-            return 'p';
-        }
-        if (dealer_sum == player_sum) {
-            return 'e';
-        }
-        return 'd';
     }
     return 'f';
 }
@@ -116,12 +103,14 @@ char Game::getWinner() {
 //////////////* Game Starters *////
 
 bool Game::startBet() {
+    tui::screen::clear();
+    tui::cursor::home();
     if (this->player.getCash() > 0) {
         while (true) {
             printTop();
             std::cout << "Place your bet!\t\t $" << tui::string(this->player.getBet()).green()
-                      << "\n[W = Raise Bet | S = Decrease Bet | R = Done]\n";
-            switch (toupper(read_ch())) {
+                      << "\r\n[W = Raise Bet | S = Decrease Bet | R = Done]\n";
+            switch (toupper(Input::read_ch())) {
                 case 'W':
                     if (this->player.getCash() >= 5) {
                         this->player.setBet(5);
@@ -150,7 +139,7 @@ bool Game::startGame() {
     this->player.addCard(this->deck.deal());
     this->dealer.addCard(this->deck.deal());
     printBody();
-    if (handleWins()) {
+    if (checkWins()) {
         return false;
     }
     while (true) {
@@ -159,7 +148,7 @@ bool Game::startGame() {
         if (c == 72) {
             this->player.addCard(this->deck.deal());
             printBody();
-            if (handleWins()) {
+            if (checkWins()) {
                 return false;
             }
         } else if (c == 83) {
@@ -357,18 +346,26 @@ void Game::printInstructions() {
 void Game::printTop() {
     tui::screen::clear();
     tui::cursor::home();
-    std::cout << tui::string(Print::title_blackjack()).yellow() << "\n";
-    std::cout << color::red_fg() << "\t\tCards: " << deck.getSize() << color::green_fg()
-              << " \tCash: " << player.getCash() << color::magenta_fg() << " \tBet: " << player.getBet()
-              << color::blue_fg() << " \tName: " << player.getName() << style::reset_style() << "\n\n\n";
+    std::cout << tui::string(utils::raw_mode_converter(Print::title_blackjack())).yellow() << "\n\r";
+    // std::cout << color::red_fg() << "\t\tCards: " << deck.getSize() << color::green_fg()
+    //           << " \tCash: " << player.getCash() << color::magenta_fg() << " \tBet: " << player.getBet()
+    //           << color::blue_fg() << " \tName: " << player.getName() << style::reset_style() << "\n\r";
+    std::cout << color::green_fg() << " \tCash: " << this->player.getCash() << color::magenta_fg() << " \tBet: " << this->player.getBet()
+              << color::blue_fg() << " \tName: " << this->player.getName() << style::reset_style() << "\n\r";
 }
 
 void Game::printBody() {
-    printTop();
-    std::cout << tui::string(Print::dealer_border()).red();
-    dealer.printFirstCard();
-    std::cout << tui::string(Print::player_border()).cyan();
-    player.printCards();
-    std::cout << color::green_fg() << "\nSum: " << color::red_fg() << player.getSum()
-              << style::reset_style() << "\n";
+    // printTop();
+    tui::disable_raw_mode();
+    std::cout << tui::string(utils::raw_mode_converter(Print::dealer_border())).red();
+    if (dealer.getHand().size() == 1) {
+        this->dealer.printFirstCard();
+    } else {
+        this->dealer.printCards();
+    }
+    std::cout << tui::string(utils::raw_mode_converter(Print::player_border())).cyan();
+    this->player.printCards();
+    std::cout << color::green_fg() << "\nSum: " << color::red_fg() << this->player.getSum()
+              << style::reset_style() << "\n\r";
+    tui::enable_raw_mode();
 }
