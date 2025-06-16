@@ -23,7 +23,7 @@ endif
 asio_dep = dependency('asio', required: true)
 
 sources = ['src/main.cpp', '../card.cpp', '../dealer.cpp', '../deck.cpp', '../game.cpp', '../human.cpp', '../player.cpp', '../print.cpp', '../statistics.cpp']
-hdrs = include_directories('./headers', '../headers', '../../external/cpptui', './external/Crow/include')
+hdrs = include_directories('./headers', '../headers', '../../external/cpptui', '../client/external/json/single_include', './external/Crow/include', '../client/external/HttpLib')
 
 proj_name = 'blackjackpp-server'
 executable(proj_name, sources,

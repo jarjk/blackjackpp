@@ -15,7 +15,7 @@ static inline void connect(httplib::Client& cli, ClientGame& cg);
 int main() {
     tui::init();
 
-    httplib::Client cli("192.168.0.234", 18080);
+    httplib::Client cli("localhost", 18080);
     cli.set_keep_alive(true);
 
     ClientGame cg;

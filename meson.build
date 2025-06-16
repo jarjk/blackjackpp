@@ -28,6 +28,6 @@ message('cpptui cloned to: ' + cpptui_dir)
 
 main_target_name = 'blackjack'
 sources = ['src/blackjack.cpp', 'src/card.cpp', 'src/dealer.cpp', 'src/deck.cpp', 'src/game.cpp', 'src/human.cpp', 'src/player.cpp', 'src/print.cpp', 'src/statistics.cpp']
-hdrs = include_directories('src/headers', 'external/cpptui', 'src/client/external/json/single_include', './src/server/external/Crow/include')
+hdrs = include_directories('src/headers', 'external/cpptui', 'src/client/external/json/single_include', './src/server/external/Crow/include', './src/client/external/json')
 
 executable(main_target_name, sources, include_directories: hdrs, install: true)
