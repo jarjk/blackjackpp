@@ -33,17 +33,20 @@ int main() {
     CROW_ROUTE(app, "/bet/<string>")
         .methods("POST"_method)([](const crow::request& req, const std::string& name) {
             const char* amount_s = req.url_params.get("amount");
-            if (!amount_s) {
-                return crow::response(400, "missing amount of bet");
+            int amount = 0;
+            // clang-format off
+            try { amount = std::stoi(amount_s); } catch (...) { }
+            // clang-format on
+            if (!amount_s || amount == 0) {
+                return crow::response(400, "missing or incorrect amount of bet");
             }
-            int amount = std::stoi(amount_s); // TODO: don't panic
             auto& game = manager.players[name].game;
             auto& player = game.player;
 
             if (!game.player.getHand().empty() && game.getWinner() == 'f') {
                 return crow::response(400, "dont bet during zhe game");
             }
-            game.player.clearCards(); // reset game
+            game.player.clearCards();  // reset game
             game.dealer.clearCards();
             player.setBet(amount);
             std::cerr << "new game\n";
@@ -57,7 +60,7 @@ int main() {
             crow::json::wvalue res;
             res["cash"] = player.getCash();
             res["hand"] = player.dbg_cards();
-            res["dealer"] = game.dealer.dbg_cards(); // TODO: don't print all the cards
+            res["dealer"] = game.dealer.dbg_cards();  // TODO: don't print all the cards
             res["winner"] = std::format("{}", game.getWinner());
             return crow::response(res);
         });
@@ -97,9 +100,7 @@ int main() {
     });
 
     // GET /help
-    CROW_ROUTE(app, "/help").methods("GET"_method)([]() {
-        return crow::response(Print::instructions());
-    });
+    CROW_ROUTE(app, "/help").methods("GET"_method)([]() { return crow::response(Print::instructions()); });
 
-    app.port(18080).multithreaded().run(); 
+    app.port(18080).multithreaded().run();
 }
