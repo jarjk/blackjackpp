@@ -1,8 +1,13 @@
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+#include <httplib.h>
+
 #include <cstdlib>
 #include <iostream>
 
 #include "client_game.hpp"
-#include "httplib.h"
 #include "input.hpp"
 #include "print.hpp"
 #include "tui.hpp"
@@ -20,7 +25,7 @@ int main() {
 
     ClientGame cg;
 
-    run(cg ,cli);
+    run(cg, cli);
 
     tui::reset();
 }
@@ -44,10 +49,12 @@ void run(ClientGame& cg, httplib::Client& cli) {
             case '1':
                 connect(cli, cg);
                 do {
-                    tui::cursor::set_position(tui::screen::size().first / 2, (tui::screen::size().second / 2)- 9);
+                    tui::cursor::set_position(tui::screen::size().first / 2,
+                                              (tui::screen::size().second / 2) - 9);
                     tui::screen::clear_line_right();
                     cg.kinda_beginGame(cli);
-                    tui::cursor::set_position(tui::screen::size().first / 2, (tui::screen::size().second / 2)- 9);
+                    tui::cursor::set_position(tui::screen::size().first / 2,
+                                              (tui::screen::size().second / 2) - 9);
                     std::cerr << "continue? (Y/n)";
                     c = Input::read_ch();
                 } while (c == 'y' || c == 'Y' || c == SpecKey::Enter);
