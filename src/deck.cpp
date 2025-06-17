@@ -1,6 +1,7 @@
 #include "headers/deck.hpp"
 
 #include <algorithm>
+#include <iostream>
 
 #include "headers/random.hpp"
 

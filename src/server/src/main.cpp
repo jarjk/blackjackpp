@@ -57,12 +57,12 @@ crow::response bet(const crow::request& req, const std::string& uname) {
     game.deal1_dealer();
     game.deal1_player();
 
-    crow::json::wvalue res;
+    nlohmann::json res;
     res["cash"] = player.getCash();
     res["hand"] = player.getHandJson();
     res["dealer"] = game.dealer.getHandJson(!game.hasEnded());
     res["winner"] = std::format("{}", game.getWinner());
-    return {res};
+    return {res.dump()};
 }
 
 crow::response make_move(const crow::request& req, const std::string& uname) {
@@ -85,7 +85,7 @@ crow::response make_move(const crow::request& req, const std::string& uname) {
     } else {
         return {400, "should 'hit' or 'stand'"};
     }
-    crow::json::wvalue res;
+    nlohmann::json res;
     bool has_ended = false;
     // if has ended, updates player status
     if (game.handleWins()) {
@@ -94,7 +94,7 @@ crow::response make_move(const crow::request& req, const std::string& uname) {
     }
     res["hand"] = game.player.getHandJson();
     res["dealer"] = game.dealer.getHandJson(!has_ended);
-    return res;
+    return {res.dump()};
 }
 
 int main() {
@@ -111,7 +111,7 @@ int main() {
 
     // GET /game_state
     CROW_ROUTE(app, "/game_state").methods("GET"_method)([]() {
-        return crow::response(manager.get_game_state());
+        return crow::response(manager.get_game_state().dump());
     });
 
     // GET /help

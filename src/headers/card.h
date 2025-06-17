@@ -3,7 +3,7 @@
 #include <format>
 #include <string>
 
-#include "crow/json.h"
+// #include "crow/json.h"
 #include "nlohmann/json.hpp"
 
 class Card {
@@ -30,13 +30,21 @@ class Card {
     char getPrintNumber() const;
     void printCardL1() const;
     void printCardL2() const;
-    crow::json::wvalue toJson() const {
-        crow::json::wvalue card_json;
+    nlohmann::json toJson() const {
+        // crow::json::wvalue card_json;
+        nlohmann::json card_json;
         card_json["number"] = number;
         card_json["suit"] = std::format("{}", suit);
         card_json["block"] = block;
         return card_json;
     }
+    // crow::json::wvalue toJson() const {
+    //     crow::json::wvalue card_json;
+    //     card_json["number"] = number;
+    //     card_json["suit"] = std::format("{}", suit);
+    //     card_json["block"] = block;
+    //     return card_json;
+    // }
 };
 
 inline void from_json(const nlohmann::json& j, Card& c) {
