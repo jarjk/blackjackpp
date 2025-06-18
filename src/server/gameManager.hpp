@@ -3,7 +3,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "crow/json.h"
 #include "game.hpp"
 #include "player.hpp"
 
@@ -65,9 +64,9 @@ class GameManager {
         return {&players[name], false};
     }
 
-    crow::json::wvalue get_game_state() {
+    nlohmann::json get_game_state() {
         this->lock();
-        crow::json::wvalue res;
+        nlohmann::json res;
 
         res["status"] = (status == WAITING) ? "waiting" : "in_progress";
         for (auto& [id, p] : players) {

@@ -1,0 +1,2 @@
+option('client', type: 'boolean', value: true, description: 'Build the client')
+option('server', type: 'boolean', value: false, description: 'Build the server')
