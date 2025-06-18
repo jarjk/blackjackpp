@@ -13,7 +13,7 @@
 
 ### Cloning
 ```sh
-git clone https://github.com/jeromeschmied/blackjackpp
+git clone https://github.com/jarjk/blackjackpp
 cd blackjackpp
 ```
 
