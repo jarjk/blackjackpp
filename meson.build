@@ -12,32 +12,37 @@ project('blackjackpp', 'cpp',
 )
 
 # dep: [name, github_repo, include_dir]
-gh_deps = [['cpptui', 'csboo/cpptui', '.'], ['nlohmann_json', 'nlohmann/json', 'single_include'], ['cpp-httplib', 'yhirose/cpp-httplib', '.']]
+gh_deps = {
+  'cpptui': ['csboo/cpptui', 'cfa92dfdf69c6218f9cf95dac70cf8201a350184', '.'],
+  'nlohmann_json': ['nlohmann/json', 'b451735fe7bb3283336f934b3f6cd3f484f73649', 'single_include'],
+  'cpp-httplib': ['yhirose/cpp-httplib', '3a1f379e751ef6555f06c5c1ef367a6fce26722c', '.']
+}
 
 fs = import('fs')
 git = find_program('git', required: true)
 external_dir = '.' / 'external'
+system_deps = get_option('system-deps')
 
 dep_map = {}
 
-foreach dep : gh_deps
-  name = dep[0]
-  repo = dep[1]
-  inc_subdir = dep[2]
+foreach name, details : gh_deps
+  repo = details[0]
+  commit = details[1]
+  inc_subdir = details[2]
 
   sys_dep = dependency(name, required: false)
-  if sys_dep.found()
+  if system_deps and sys_dep.found()
     message(name + ' found on system.')
     dep_map += {name: sys_dep}
   else
     dep_dir = external_dir / name
 
     if not fs.exists(dep_dir)
-      message(name + ' not found, cloning from https://github.com/' + repo)
-      res = run_command(git, 'clone', '--depth=1', 'https://github.com/' + repo, dep_dir, check: true)
+      message(name + ' not found, cloning from https://github.com/' + repo + ' @' + commit)
+      res = run_command(git, 'clone', '--revision=' + commit, 'https://github.com/' + repo, dep_dir, check: true)
     else
       message(name + ' already cloned at: ' + dep_dir + ', updating')
-      res = run_command(git, '-C', dep_dir, 'pull', check: true)
+      res = run_command(git, '-C', dep_dir, 'checkout', commit, check: true)
     endif
     message(res.stdout(), res.stderr())
     inc = include_directories(dep_dir / inc_subdir)
