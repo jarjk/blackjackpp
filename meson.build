@@ -44,12 +44,20 @@ foreach dep : gh_deps
     dep_map += {name: sys_dep}
   else
     dep_dir = external_dir / name
+
+    if fs.exists(dep_dir)
+    else
+      run_command(git, 'clone', '--depth=1', 'https://github.com/' + repo, dep_dir, check: true)
+    endif
+    
     if not fs.exists(dep_dir)
       message(name + ' not found, cloning from https://github.com/' + repo)
-      run_command(git, 'clone', '--depth=1', 'https://github.com/' + repo, dep_dir, check: true)
+      res = run_command(git, 'clone', '--depth=1', 'https://github.com/' + repo, dep_dir, check: true)
     else
-      message(name + ' already cloned at: ' + dep_dir)
+      message(name + ' already cloned at: ' + dep_dir + ', updating')
+      res = run_command(git, '-C', dep_dir, 'pull', check: true)
     endif
+    message(res.stdout(), res.stderr())
     inc = include_directories(dep_dir / inc_subdir)
     dep_map += {name: declare_dependency(include_directories: inc)}
   endif
