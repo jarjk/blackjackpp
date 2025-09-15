@@ -7,10 +7,10 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <tui.hpp>
 #include <utility>
 
 #include "player.hpp"
-#include "tui.hpp"
 
 // fixes windows compilation, XD
 #undef max

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <sstream>
+#include <tui.hpp>
 
 #include "string"
-#include "tui.hpp"
 
 namespace utils {
     inline void cls() {

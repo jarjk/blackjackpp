@@ -3,9 +3,8 @@
 #include <array>
 #include <format>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
-
-#include "nlohmann/json.hpp"
 
 class Card {
    private:

@@ -1,9 +1,10 @@
+#include <httplib.h>
+
 #include <cctype>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
 
-#include "httplib.h"           // https://github.com/yhirose/cpp-httplib (single header)
-#include "nlohmann/json.hpp"   // json library
 #include "gameManager.hpp"
 #include "print.hpp"
 
@@ -20,7 +21,7 @@ void join(const httplib::Request& req, httplib::Response& res) {
     std::string uname = req.get_param_value("username");
     manager.lock();
 
-    auto [p, joined_already] = manager.join_game(uname.c_str());
+    auto [p, joined_already] = manager.join_game(uname);
     if (joined_already) {
         res.status = 400;
         res.set_content("already joined", "text/plain");
@@ -41,7 +42,9 @@ void bet(const httplib::Request& req, httplib::Response& res) {
     } else {
         // fallback: parse last path segment
         auto pos = req.path.find_last_of('/');
-        if (pos != std::string::npos && pos + 1 < req.path.size()) uname = req.path.substr(pos + 1);
+        if (pos != std::string::npos && pos + 1 < req.path.size()) {
+            uname = req.path.substr(pos + 1);
+        }
     }
 
     manager.lock();
@@ -107,7 +110,9 @@ void move(const httplib::Request& req, httplib::Response& res) {
         uname = req.matches[1];
     } else {
         auto pos = req.path.find_last_of('/');
-        if (pos != std::string::npos && pos + 1 < req.path.size()) uname = req.path.substr(pos + 1);
+        if (pos != std::string::npos && pos + 1 < req.path.size()) {
+            uname = req.path.substr(pos + 1);
+        }
     }
 
     manager.lock();
@@ -177,4 +182,3 @@ int main() {
     app.listen("0.0.0.0", 18080);
     return 0;
 }
-

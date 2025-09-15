@@ -7,15 +7,15 @@
 #include <httplib.h>
 
 #include <cctype>
+#include <input.hpp>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
+#include <tui.hpp>
 #include <utility>
 
 #include "game.hpp"
-#include "input.hpp"
-#include "nlohmann/json.hpp"
 #include "print.hpp"
-#include "tui.hpp"
 #include "utils.hpp"
 
 using json = nlohmann::json;
@@ -54,8 +54,8 @@ struct ClientGame {
                         }
                         break;
                     case 'r':
-                    case '\n': // this doesn't work for whatever reason
-                    case 13:  // enter
+                    case '\n':  // this doesn't work for whatever reason
+                    case 13:    // enter
                         return true;
                     default:
                         break;

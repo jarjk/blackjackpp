@@ -1,10 +1,9 @@
 #pragma once
 
+#include <input.hpp>
 #include <sstream>
 #include <string>
-
-#include "input.hpp"
-#include "tui.hpp"
+#include <tui.hpp>
 
 // enables raw mode for the time of the single character read
 inline char read_ch() {
