@@ -23,7 +23,7 @@ if build_client
 endif
 
 if build_server
-  gh_deps += [['crow', 'crowcpp/crow', 'include']]
+  gh_deps += [['cpp-httplib', 'yhirose/cpp-httplib', '.']]
   message('building the server')
 endif
 
@@ -69,11 +69,11 @@ if build_client
   executable('blackjackpp-client', ['src/client/main.cpp'], dependencies: [libblackjackpp, ws2_32, dep_map['cpp-httplib']], install: true)
 endif
 if build_server
-  asio_dep = dependency('asio', required: true)
+  # asio_dep = dependency('asio', required: true)
 
   sources = ['src/server/main.cpp']
   executable('blackjackpp-server', sources,
-    dependencies : [asio_dep, libblackjackpp, dep_map['crow']],
+    dependencies : [libblackjackpp, dep_map['cpp-httplib']],
     install : true
   )
 endif
