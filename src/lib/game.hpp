@@ -5,20 +5,18 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-
-#include "print.hpp"
-#include "tui.hpp"
-#include "utils.hpp"
-
-namespace color = tui::text::color;
-namespace style = tui::text::style;
-
 #include <string>
+#include <tui.hpp>
 
 #include "dealer.hpp"
 #include "deck.hpp"
 #include "player.hpp"
+#include "print.hpp"
 #include "statistics.hpp"
+#include "utils.hpp"
+
+namespace color = tui::text::color;
+namespace style = tui::text::style;
 
 class Game {
     // private:

@@ -5,12 +5,12 @@
 #include <httplib.h>
 
 #include <cstdlib>
+#include <input.hpp>
 #include <iostream>
+#include <tui.hpp>
 
 #include "client_game.hpp"
-#include "input.hpp"
 #include "print.hpp"
-#include "tui.hpp"
 #include "utils.hpp"
 
 void help(httplib::Client& cli);

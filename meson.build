@@ -66,14 +66,12 @@ if build_client
     cc = meson.get_compiler('cpp')
     ws2_32 = cc.find_library('ws2_32', required: true)
   endif
-  executable('blackjackpp-client', ['src/client/main.cpp'], dependencies: [libblackjackpp, ws2_32, dep_map['cpp-httplib']], install: true)
+  executable('blackjackpp-client', ['src/client/main.cpp'], install: true,
+    dependencies: [libblackjackpp, ws2_32, dep_map['cpp-httplib']])
 endif
 if build_server
-  # asio_dep = dependency('asio', required: true)
-
   sources = ['src/server/main.cpp']
-  executable('blackjackpp-server', sources,
-    dependencies : [libblackjackpp, dep_map['cpp-httplib']],
-    install : true
+  executable('blackjackpp-server', sources, install : true,
+    dependencies : [libblackjackpp, dep_map['cpp-httplib']]
   )
 endif
