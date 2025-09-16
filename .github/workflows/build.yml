@@ -19,10 +19,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Set sys and executable name variables
+        id: set_vars
+        shell: bash
+        run: |
+          SYS=$(echo "${{ runner.arch }}-${{ runner.os }}" | tr '[:upper:]' '[:lower:]' | sed "s/x64/x86_64/" | sed "s/arm64/aarch64/")
+
+          echo "artifact_name=blackjackpp-${SYS}" >> "$GITHUB_OUTPUT"
+          echo "sys=${SYS}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/cache@v4
         with:
           path: builddir/
-          key: ${{ runner.arch }}-${{ runner.os }}
+          key: ${{ steps.set_vars.outputs.sys }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -48,18 +57,9 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: ${{ matrix.os }}_Meson_Testlog
+          name: ${{ steps.set_vars.outputs.sys }}_meson_logs
           path: builddir/meson-logs/*
-
           
-      - name: Set executable name variables
-        id: set_vars
-        shell: bash
-        run: |
-          SYS=$(echo "${{ runner.arch }}-${{ runner.os }}" | tr '[:upper:]' '[:lower:]' | sed "s/x64/x86_64/" | sed "s/arm64/aarch64/")
-
-          echo "artifact_name=blackjackpp-${SYS}" >> "$GITHUB_OUTPUT"
-
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
