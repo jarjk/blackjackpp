@@ -7,11 +7,6 @@ on:
       - "**.cpp"
       - "**.hpp"
       - ".github/workflows/**"
-  pull_request:
-    paths:
-      - "**.cpp"
-      - "**.hpp"
-      - ".github/workflows/**"
 
 jobs:
   build:
