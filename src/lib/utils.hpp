@@ -1,11 +1,18 @@
 #pragma once
 
+#include <chrono>
 #include <sstream>
 #include <tui.hpp>
 
 #include "string"
 
 namespace utils {
+    // now as millisecond unix timestamp, string
+    inline long long now_s() {
+        auto now = std::chrono::system_clock::now();
+        return now.time_since_epoch().count() / 1000;
+    }
+
     inline void cls() {
         tui::screen::clear();
         tui::cursor::home();

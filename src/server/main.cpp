@@ -1,7 +1,6 @@
 #include <httplib.h>
 
 #include <cctype>
-#include <chrono>
 #include <csignal>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -12,12 +11,6 @@
 
 GameManager manager;
 httplib::Server svr;
-
-// now as string
-std::string now_s() {
-    auto now = std::chrono::system_clock::now();
-    return std::to_string(now.time_since_epoch().count() / 1000);
-}
 
 // stop server
 void signal_handler(int /*signal*/) {
@@ -172,11 +165,11 @@ void move(const httplib::Request& req, httplib::Response& res) {
 int main() {
     signal(SIGINT, signal_handler);
 
-    std::cerr << now_s() << " starting server initialisation\n";
+    std::cerr << utils::now_s() << " starting server initialisation\n";
     svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
-        std::cerr << now_s() << " " << req.remote_addr << ':' << req.remote_port << " [" << req.method
-                  << "] " << req.target << " -> " << res.status << ", \"" << res.body.substr(0, 512)
-                  << "...\"\n";
+        std::cerr << utils::now_s() << " " << req.remote_addr << ':' << req.remote_port << " ["
+                  << req.method << "] " << req.target << " -> " << res.status << ", \""
+                  << res.body.substr(0, 512) << "...\"\n";
     });
 
     // GET /join?username=...
