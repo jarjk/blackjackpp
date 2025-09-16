@@ -1,6 +1,7 @@
 #include <httplib.h>
 
 #include <cctype>
+#include <chrono>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -9,6 +10,12 @@
 #include "print.hpp"
 
 GameManager manager;
+
+// now as string
+std::string now_s() {
+    auto now = std::chrono::system_clock::now();
+    return std::to_string(now.time_since_epoch().count() / 1000);
+}
 
 // GET /join?username=...
 void join(const httplib::Request& req, httplib::Response& res) {
@@ -156,29 +163,36 @@ void move(const httplib::Request& req, httplib::Response& res) {
 }
 
 int main() {
-    httplib::Server app;
+    httplib::Server svr;
+
+    std::cerr << now_s() << " starting server initialisation\n";
+    svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
+        std::cerr << now_s() << " " << req.remote_addr << ':' << req.remote_port << " [" << req.method
+                  << "] " << req.target << " -> " << res.status << ", \"" << res.body.substr(0, 512)
+                  << "...\"\n";
+    });
 
     // GET /join?username=...
-    app.Get("/join", join);
+    svr.Get("/join", join);
 
     // POST /bet/<username>?amount=<int>
     // Use regex route so we capture username as first match group
-    app.Post(R"(/bet/(.+))", bet);
+    svr.Post(R"(/bet/(.+))", bet);
 
     // POST /move/<username>?action=[hit, stand]
-    app.Post(R"(/move/(.+))", move);
+    svr.Post(R"(/move/(.+))", move);
 
     // GET /game_state
-    app.Get("/game_state", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/game_state", [](const httplib::Request&, httplib::Response& res) {
         res.set_content(manager.get_game_state().dump(), "application/json");
     });
 
     // GET /help
-    app.Get("/help", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/help", [](const httplib::Request&, httplib::Response& res) {
         res.set_content(Print::instructions(), "text/plain");
     });
 
-    std::cout << "Starting server on :18080\n";
-    app.listen("0.0.0.0", 18080);
+    std::cerr << "starting server on 0.0.0.0:18080\n";
+    svr.listen("0.0.0.0", 18080);
     return 0;
 }
