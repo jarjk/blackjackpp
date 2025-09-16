@@ -77,7 +77,7 @@ void run(ClientGame& cg, httplib::Client& cli) {
                                               (tui::screen::size().second / 2) - 9);
                     std::cerr << "continue? (Y/n)";
                     c = Input::read_ch();
-                } while (c == 'y' || c == 'Y' || c == SpecKey::Enter);
+                } while (std::tolower(c) != 'n' && c == SpecKey::CtrlC);
                 break;
             case '2':
                 help(cli);
