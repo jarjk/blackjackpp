@@ -49,4 +49,4 @@ jobs:
         if: failure()
         with:
           name: ${{ matrix.os }}_Meson_Testlog
-          path: builddir/meson-logs/testlog.txt
+          path: builddir/meson-logs/*
