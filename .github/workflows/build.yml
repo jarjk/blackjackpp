@@ -41,6 +41,12 @@ jobs:
       - name: compile
         run: meson compile -C builddir/ -v
 
+      - name: whatsup
+        shell: bash
+        run: |
+          ls -lA
+          ls -l builddir/
+
       - name: Upload compilation log
         uses: actions/upload-artifact@v4
         if: failure()
