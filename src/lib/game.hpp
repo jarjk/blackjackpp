@@ -98,6 +98,9 @@ class Game {
             // std::cout << tui::string(Print::blackjack()).green() << "\n    [Dealer : " <<
             // dealer_sum
             // << " | " << this->player.getName() << " : " << player_sum << "]\n";
+            if (dealer_sum == player_sum) {
+                return 'e';
+            }
             if (dealer_sum == 21) {
                 return 'd';
             }
