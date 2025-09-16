@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <chrono>
+#include <csignal>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -10,6 +11,7 @@
 #include "print.hpp"
 
 GameManager manager;
+httplib::Server svr;
 
 // now as string
 std::string now_s() {
@@ -17,6 +19,11 @@ std::string now_s() {
     return std::to_string(now.time_since_epoch().count() / 1000);
 }
 
+// stop server
+void signal_handler(int /*signal*/) {
+    std::cout << "\nReceived signal, shutting down gracefully...\n";
+    svr.stop();
+}
 // GET /join?username=...
 void join(const httplib::Request& req, httplib::Response& res) {
     if (!req.has_param("username")) {
@@ -163,7 +170,7 @@ void move(const httplib::Request& req, httplib::Response& res) {
 }
 
 int main() {
-    httplib::Server svr;
+    signal(SIGINT, signal_handler);
 
     std::cerr << now_s() << " starting server initialisation\n";
     svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
