@@ -24,6 +24,11 @@ jobs:
       - name: Setup MSVC dev environment
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Set cl.exe for windows build
+        if: runner.os == 'Windows'
+        run: |
+          echo "CC=cl" >> $GITHUB_ENV
+          echo "CXX=cl" >> $GITHUB_ENV
 
       - name: Set sys and executable name variables
         id: set_vars
