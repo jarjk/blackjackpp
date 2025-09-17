@@ -7,6 +7,7 @@ on:
       - "**.cpp"
       - "**.hpp"
       - ".github/workflows/**"
+      - "meson.*"
 
 jobs:
   build:
