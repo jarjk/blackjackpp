@@ -5,20 +5,18 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-
-#include "print.hpp"
-#include "tui.hpp"
-#include "utils.hpp"
-
-namespace color = tui::text::color;
-namespace style = tui::text::style;
-
 #include <string>
+#include <tui.hpp>
 
 #include "dealer.hpp"
 #include "deck.hpp"
 #include "player.hpp"
+#include "print.hpp"
 #include "statistics.hpp"
+#include "utils.hpp"
+
+namespace color = tui::text::color;
+namespace style = tui::text::style;
 
 class Game {
     // private:
@@ -100,6 +98,9 @@ class Game {
             // std::cout << tui::string(Print::blackjack()).green() << "\n    [Dealer : " <<
             // dealer_sum
             // << " | " << this->player.getName() << " : " << player_sum << "]\n";
+            if (dealer_sum == player_sum) {
+                return 'e';
+            }
             if (dealer_sum == 21) {
                 return 'd';
             }

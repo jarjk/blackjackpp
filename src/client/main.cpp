@@ -5,12 +5,13 @@
 #include <httplib.h>
 
 #include <cstdlib>
+#include <fstream>
+#include <input.hpp>
 #include <iostream>
+#include <tui.hpp>
 
 #include "client_game.hpp"
-#include "input.hpp"
 #include "print.hpp"
-#include "tui.hpp"
 #include "utils.hpp"
 
 void help(httplib::Client& cli);
@@ -26,6 +27,17 @@ int main() {
     }
 
     httplib::Client cli(server_addr, 18080);
+
+    std::ofstream logf(".blackjacpp-client.log", std::ios::app);
+    cli.set_logger([&logf](const httplib::Request& req, const httplib::Response& res) {
+        logf << utils::now_s() << " ✓ " << req.method << " " << req.path << " -> " << res.status << " ("
+             << res.body.size() << " bytes" << ")" << '\n';
+    });
+
+    cli.set_error_logger([&logf](const httplib::Error& err, const httplib::Request* req) {
+        logf << utils::now_s() << " ✗ " << req->method << " " << req->path
+             << " failed: " << httplib::to_string(err) << '\n';
+    });
     cli.set_keep_alive(true);
 
     ClientGame cg;
@@ -35,6 +47,7 @@ int main() {
     run(cg, cli);
 
     tui::reset();
+    logf.close();
 }
 
 void run(ClientGame& cg, httplib::Client& cli) {
@@ -64,7 +77,7 @@ void run(ClientGame& cg, httplib::Client& cli) {
                                               (tui::screen::size().second / 2) - 9);
                     std::cerr << "continue? (Y/n)";
                     c = Input::read_ch();
-                } while (c == 'y' || c == 'Y' || c == SpecKey::Enter);
+                } while (std::tolower(c) != 'n' && c != SpecKey::CtrlC);
                 break;
             case '2':
                 help(cli);

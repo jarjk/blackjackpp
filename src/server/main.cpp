@@ -1,48 +1,89 @@
+#include <httplib.h>
+
 #include <cctype>
+#include <csignal>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
 
-#include "crow/app.h"
-#include "crow/http_request.h"
-#include "crow/http_response.h"
 #include "gameManager.hpp"
 #include "print.hpp"
 
 GameManager manager;
+httplib::Server svr;
 
-crow::response join(const crow::request& req) {
-    const char* uname = req.url_params.get("username");
-    if (uname == nullptr) {
-        return {400, "missing username"};
+// stop server
+void signal_handler(int /*signal*/) {
+    std::cout << "\nReceived signal, shutting down gracefully...\n";
+    svr.stop();
+}
+// GET /join?username=...
+void join(const httplib::Request& req, httplib::Response& res) {
+    if (!req.has_param("username")) {
+        res.status = 400;
+        res.set_content("missing username", "text/plain");
+        return;
     }
+
+    std::string uname = req.get_param_value("username");
     manager.lock();
 
     auto [p, joined_already] = manager.join_game(uname);
     if (joined_already) {
-        return {400, "already joined"};
+        res.status = 400;
+        res.set_content("already joined", "text/plain");
+        return;
     }
 
-    return {};  // ok
+    // ok (200) with empty body
+    res.status = 200;
+    res.set_content("", "text/plain");
 }
 
-crow::response bet(const crow::request& req, const std::string& uname) {
+// POST /bet/<username>?amount=<int>
+void bet(const httplib::Request& req, httplib::Response& res) {
+    std::string uname;
+    if (!req.matches.empty() && req.matches.size() > 1) {
+        uname = req.matches[1];
+    } else {
+        res.status = 400;
+        res.set_content("missing username", "text/plain");
+        return;
+    }
+
     manager.lock();
     if (!manager.already_joined(uname)) {
-        return {400, "not joined"};
+        res.status = 400;
+        res.set_content("not joined", "text/plain");
+        return;
     }
+
     auto& game = manager.players[uname].game;
     auto& player = game.player;
     if (!player.getHand().empty() && !game.hasEnded()) {
-        return {400, "dont bet during zhe game"};
+        res.status = 400;
+        res.set_content("dont bet during zhe game", "text/plain");
+        return;
     }
 
-    const char* amount_s = req.url_params.get("amount");
+    if (!req.has_param("amount")) {
+        res.status = 400;
+        res.set_content("missing or incorrect amount of bet", "text/plain");
+        return;
+    }
+
+    std::string amount_s = req.get_param_value("amount");
     int amount = 0;
-    // clang-format off
-    try { amount = std::stoi(amount_s); } catch (...) { }
-    // clang-format on
-    if (amount_s == nullptr || amount == 0 || amount > player.getCash()) {
-        return {400, "missing or incorrect amount of bet"};
+    try {
+        amount = std::stoi(amount_s);
+    } catch (...) {
+        amount = 0;
+    }
+
+    if (amount == 0 || amount > player.getCash()) {
+        res.status = 400;
+        res.set_content("missing or incorrect amount of bet", "text/plain");
+        return;
     }
 
     player.clearCards();  // reset game
@@ -56,25 +97,43 @@ crow::response bet(const crow::request& req, const std::string& uname) {
     game.deal1_dealer();
     game.deal1_player();
 
-    nlohmann::json res;
-    res["cash"] = player.getCash();
-    res["hand"] = player.getHandJson();
-    res["dealer"] = game.dealer.getHandJson(!game.handleWins());
-    res["winner"] = std::format("{}", game.getWinner());
-    return {res.dump()};
+    nlohmann::json out;
+    out["cash"] = player.getCash();
+    out["hand"] = player.getHandJson();
+    out["dealer"] = game.dealer.getHandJson(!game.handleWins());
+    out["winner"] = std::format("{}", game.getWinner());
+
+    res.status = 200;
+    res.set_content(out.dump(), "application/json");
 }
 
-crow::response make_move(const crow::request& req, const std::string& uname) {
-    manager.lock();
-    const char* action = req.url_params.get("action");
-    if (action == nullptr) {
-        return {400, "missing action parameter"};
+// POST /move/<username>?action=[hit, stand]
+void move(const httplib::Request& req, httplib::Response& res) {
+    std::string uname;
+    if (!req.matches.empty() && req.matches.size() > 1) {
+        uname = req.matches[1];
+    } else {
+        auto pos = req.path.find_last_of('/');
+        if (pos != std::string::npos && pos + 1 < req.path.size()) {
+            uname = req.path.substr(pos + 1);
+        }
     }
-    std::string action_s = std::string(action);
+
+    manager.lock();
+    if (!req.has_param("action")) {
+        res.status = 400;
+        res.set_content("missing action parameter", "text/plain");
+        return;
+    }
+
+    std::string action_s = req.get_param_value("action");
     auto& game = manager.players[uname].game;
     if (game.hasEnded() || game.player.getBet() == 0) {
-        return {400, "game finished or forgot to bet"};
+        res.status = 400;
+        res.set_content("game finished or forgot to bet", "text/plain");
+        return;
     }
+
     if (action_s == "hit" || action_s == "h") {
         game.deal1_player();
     } else if (action_s == "stand" || action_s == "s") {
@@ -82,37 +141,55 @@ crow::response make_move(const crow::request& req, const std::string& uname) {
         game.player.setStood(true);
         game.dealDealer();
     } else {
-        return {400, "should 'hit' or 'stand'"};
+        res.status = 400;
+        res.set_content("should 'hit' or 'stand'", "text/plain");
+        return;
     }
-    nlohmann::json res;
+
+    nlohmann::json out;
     bool has_ended = false;
-    // if has ended, updates player status
     if (game.handleWins()) {
         has_ended = true;
-        res["winner"] = std::format("{}", game.getWinner());
+        out["winner"] = std::format("{}", game.getWinner());
     }
-    res["hand"] = game.player.getHandJson();
-    res["dealer"] = game.dealer.getHandJson(!has_ended);
-    return {res.dump()};
+    out["hand"] = game.player.getHandJson();
+    out["dealer"] = game.dealer.getHandJson(!has_ended);
+
+    res.status = 200;
+    res.set_content(out.dump(), "application/json");
 }
 
 int main() {
-    crow::SimpleApp app;
+    signal(SIGINT, signal_handler);
+
+    std::cerr << utils::now_s() << " starting server initialisation\n";
+    svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
+        std::cerr << utils::now_s() << " " << req.remote_addr << ':' << req.remote_port << " ["
+                  << req.method << "] " << req.target << " -> " << res.status << ", \""
+                  << res.body.substr(0, 512) << "...\"\n";
+    });
 
     // GET /join?username=...
-    CROW_ROUTE(app, "/join").methods("GET"_method)(join);
+    svr.Get("/join", join);
 
     // POST /bet/<username>?amount=<int>
-    CROW_ROUTE(app, "/bet/<string>").methods("POST"_method)(bet);
+    // Use regex route so we capture username as first match group
+    svr.Post(R"(/bet/(.+))", bet);
 
     // POST /move/<username>?action=[hit, stand]
-    CROW_ROUTE(app, "/move/<string>").methods("POST"_method)(make_move);
+    svr.Post(R"(/move/(.+))", move);
 
     // GET /game_state
-    CROW_ROUTE(app, "/game_state").methods("GET"_method)([]() { return manager.get_game_state().dump(); });
+    svr.Get("/game_state", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(manager.get_game_state().dump(), "application/json");
+    });
 
     // GET /help
-    CROW_ROUTE(app, "/help").methods("GET"_method)([]() { return crow::response(Print::instructions()); });
+    svr.Get("/help", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(Print::instructions(), "text/plain");
+    });
 
-    app.port(18080).multithreaded().run();
+    std::cerr << "starting server on 0.0.0.0:18080\n";
+    svr.listen("0.0.0.0", 18080);
+    return 0;
 }
