@@ -49,7 +49,7 @@ jobs:
 
       - name: Reconfigure Meson if meson.* changed, or run manually
         if: github.event_name == 'workflow_dispatch' || contains(join(github.event.commits.*.modified), 'meson.')
-        run: meson setup -Dclient=true -Dserver=true --reconfigure builddir/      
+        run: meson setup -Dclient=true -Dserver=true --wipe builddir/      
       - name: Configure Project
         run: meson setup -Dclient=true -Dserver=true builddir/
 
