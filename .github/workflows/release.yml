@@ -18,17 +18,31 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Download prebuilt binary artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: release-artifacts
+        
+      - name: Prepare artifacts
+        run: |
+          set -e # exit on errors
+          ls -lARh release-artifacts
+          cd release-artifacts
 
-      - name: List all downloaded release-artifacts
-        run: ls -lARh release-artifacts
+          for platform in $(ls); do # Loop through each artifact subdirectory
+            echo "working on: '$platform'"
+            for bin in $(ls $platform); do
+              echo "binary found: '$bin'"
+              name="$platform-$(echo $bin | cut -d '-' -f 2)"
+              mv "$platform/$bin" "$name"
+            done
+            rm -r "$platform"
+          done
+          ls -lARh . # beautiful!
 
       - name: Create a GitHub release
         uses: softprops/action-gh-release@v2
         with:
           # draft: true
           generate_release_notes: true
-          files: release-artifacts/**
+          files: release-artifacts/*
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
