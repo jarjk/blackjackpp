@@ -12,20 +12,7 @@ project('blackjackpp', 'cpp',
 )
 
 # dep: [name, github_repo, include_dir]
-gh_deps = [['cpptui', 'csboo/cpptui', '.'], ['nlohmann_json', 'nlohmann/json', 'single_include']]
-
-build_client = get_option('client')
-build_server = get_option('server')
-
-if build_client
-  gh_deps += [['cpp-httplib', 'yhirose/cpp-httplib', '.']]
-  message('building the client')
-endif
-
-if build_server
-  gh_deps += [['cpp-httplib', 'yhirose/cpp-httplib', '.']]
-  message('building the server')
-endif
+gh_deps = [['cpptui', 'csboo/cpptui', '.'], ['nlohmann_json', 'nlohmann/json', 'single_include'], ['cpp-httplib', 'yhirose/cpp-httplib', '.']]
 
 fs = import('fs')
 git = find_program('git', required: true)
@@ -45,11 +32,6 @@ foreach dep : gh_deps
   else
     dep_dir = external_dir / name
 
-    if fs.exists(dep_dir)
-    else
-      run_command(git, 'clone', '--depth=1', 'https://github.com/' + repo, dep_dir, check: true)
-    endif
-    
     if not fs.exists(dep_dir)
       message(name + ' not found, cloning from https://github.com/' + repo)
       res = run_command(git, 'clone', '--depth=1', 'https://github.com/' + repo, dep_dir, check: true)
@@ -63,23 +45,27 @@ foreach dep : gh_deps
   endif
 endforeach
 
-
 lib_includes = include_directories('src/lib')
 libblackjackpp = declare_dependency(include_directories: lib_includes, dependencies: [dep_map['nlohmann_json'], dep_map['cpptui']])
 
+build_client = get_option('client')
+build_server = get_option('server')
+
+deps = [libblackjackpp, dep_map['cpp-httplib']]
+if host_machine.system() == 'windows'
+  cc = meson.get_compiler('cpp')
+  ws2_32 = cc.find_library('ws2_32', required: true)
+  dependencies += ws2_32
+endif
+cc_args = ['-D_WIN32_WINNT=0x0A00']
+
 # these guys need the dependencies ready
 if build_client
-  ws2_32 = []
-  if host_machine.system() == 'windows'
-    cc = meson.get_compiler('cpp')
-    ws2_32 = cc.find_library('ws2_32', required: true)
-  endif
-  executable('blackjackpp-client', ['src/client/main.cpp'], install: true,
-    dependencies: [libblackjackpp, ws2_32, dep_map['cpp-httplib']])
+  message('building the client')
+  executable('blackjackpp-client', ['src/client/main.cpp'], install: true, dependencies: deps, cpp_args: cc_args)
 endif
+
 if build_server
-  sources = ['src/server/main.cpp']
-  executable('blackjackpp-server', sources, install : true,
-    dependencies : [libblackjackpp, dep_map['cpp-httplib']]
-  )
+  message('building the server')
+  executable('blackjackpp-server', ['src/server/main.cpp'], install: true, dependencies: deps, cpp_args: cc_args)
 endif
