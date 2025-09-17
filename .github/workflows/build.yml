@@ -21,6 +21,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Setup MSVC dev environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Set sys and executable name variables
         id: set_vars
         shell: bash
