@@ -42,16 +42,13 @@ void join(const httplib::Request& req, httplib::Response& res) {
 
 // POST /bet/<username>?amount=<int>
 void bet(const httplib::Request& req, httplib::Response& res) {
-    // extract username from path capture or parse last segment
     std::string uname;
     if (!req.matches.empty() && req.matches.size() > 1) {
         uname = req.matches[1];
     } else {
-        // fallback: parse last path segment
-        auto pos = req.path.find_last_of('/');
-        if (pos != std::string::npos && pos + 1 < req.path.size()) {
-            uname = req.path.substr(pos + 1);
-        }
+        res.status = 400;
+        res.set_content("missing username", "text/plain");
+        return;
     }
 
     manager.lock();
