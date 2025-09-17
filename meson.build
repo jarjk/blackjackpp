@@ -55,7 +55,7 @@ deps = [libblackjackpp, dep_map['cpp-httplib']]
 if host_machine.system() == 'windows'
   cc = meson.get_compiler('cpp')
   ws2_32 = cc.find_library('ws2_32', required: true)
-  dependencies += ws2_32
+  deps += ws2_32
 endif
 cc_args = ['-D_WIN32_WINNT=0x0A00']
 
