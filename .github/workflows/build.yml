@@ -34,6 +34,7 @@ jobs:
         with:
           path: builddir/
           key: ${{ steps.set_vars.outputs.sys }}
+          save-always: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
