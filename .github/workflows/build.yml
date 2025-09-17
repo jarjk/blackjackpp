@@ -39,11 +39,10 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install build requirements
         run: |
           python -m pip install meson ninja
           python -m pip show meson # what to cache
-          python -m pip show ninja
 
       - name: Configure Project
         run: meson setup -Dclient=true -Dserver=true --reconfigure builddir/
@@ -68,4 +67,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set_vars.outputs.artifact_name }}
-          path: builddir/blackjackpp-(client|server)(.exe|) # TODO: find'em
+          path: |
+            builddir/blackjackpp-client
+            builddir/blackjackpp-client.exe
+            builddir/blackjackpp-server
+            builddir/blackjackpp-server.exe
