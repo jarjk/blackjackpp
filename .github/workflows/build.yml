@@ -7,6 +7,7 @@ on:
       - "**.cpp"
       - "**.hpp"
       - ".github/workflows/**"
+      - "meson.*"
 
 jobs:
   build:
@@ -37,9 +38,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.x'
-
-      - name: Install dependencies
-        run: python -m pip install meson ninja
+          cache: 'pip'
+          cache-dependency-path: 'build-sys-pip-pkgs.txt'
+      - run: pip install -r build-sys-pip-pkgs.txt
 
       - name: Configure Project
         run: meson setup -Dclient=true -Dserver=true --reconfigure builddir/
@@ -64,4 +65,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.set_vars.outputs.artifact_name }}
-          path: builddir/blackjackpp-(client|server)(.exe|)
+          path: |
+            builddir/blackjackpp-client
+            builddir/blackjackpp-client.exe
+            builddir/blackjackpp-server
+            builddir/blackjackpp-server.exe
