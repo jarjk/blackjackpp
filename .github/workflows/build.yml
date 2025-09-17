@@ -43,8 +43,11 @@ jobs:
           cache-dependency-path: 'build-sys-pip-pkgs.txt'
       - run: pip install -r build-sys-pip-pkgs.txt
 
+      - name: Reconfigure Meson if meson.* changed, or run manually
+        if: github.event_name == 'workflow_dispatch' || contains(join(github.event.commits.*.modified), 'meson.')
+        run: meson setup -Dclient=true -Dserver=true --reconfigure builddir/      
       - name: Configure Project
-        run: meson setup -Dclient=true -Dserver=true --reconfigure builddir/
+        run: meson setup -Dclient=true -Dserver=true builddir/
 
       - name: compile
         run: meson compile -C builddir/ -v
