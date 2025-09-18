@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <csignal>
+#include <cstddef>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -160,13 +161,21 @@ void move(const httplib::Request& req, httplib::Response& res) {
 }
 
 int main() {
+    const char* log_v = std::getenv("BJ_LOG");
+    size_t log_l = 512;
+    if (log_v != nullptr && std::string(log_v) == "verbose") {
+        log_l = std::string::npos;
+    } else {
+        std::cerr << "setting env var 'BJ_LOG' to 'verbose' will enable verbose logging\n";
+    }
+
     signal(SIGINT, signal_handler);
 
     std::cerr << utils::now_s() << " starting server initialisation\n";
-    svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
+    svr.set_logger([&log_l](const httplib::Request& req, const httplib::Response& res) {
         std::cerr << utils::now_s() << " " << req.remote_addr << ':' << req.remote_port << " ["
                   << req.method << "] " << req.target << " -> " << res.status << ", \""
-                  << res.body.substr(0, 512) << "...\"\n";
+                  << res.body.substr(0, log_l) << "...\"\n";
     });
 
     // GET /join?username=...

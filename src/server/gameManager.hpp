@@ -28,7 +28,6 @@ class GameManager {
 
    public:
     std::unordered_map<std::string, ServerGame> players;
-    enum Status : uint8_t { WAITING, IN_PROGRESS } status = WAITING;
 
     void lock() { std::lock_guard lock(this->mtx); }
 
@@ -68,7 +67,6 @@ class GameManager {
         this->lock();
         nlohmann::json res;
 
-        res["status"] = (status == WAITING) ? "waiting" : "in_progress";
         for (auto& [id, p] : players) {
             res["games"][id]["bet"] = p.game.player.getBet();
             res["games"][id]["cash"] = p.game.player.getCash();

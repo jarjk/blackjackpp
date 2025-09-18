@@ -19,10 +19,9 @@ void run(ClientGame& cg, httplib::Client& cli);
 static inline void connect(httplib::Client& cli, ClientGame& cg);
 
 int main() {
-    const char* server_addr = std::getenv("BLACKJACKPP_SERVER_ADDRESS");
+    const char* server_addr = std::getenv("BJ_ADDR");
     if (server_addr == nullptr) {
-        std::cerr << "env var 'BLACKJACKPP_SERVER_ADDRESS' is not set to the server's ip address, "
-                     "defaulting to 'localhost'";
+        std::cerr << "env var 'BJ_ADDR' is not set to the server's ip address, defaulting to 'localhost'";
         server_addr = "localhost";
     }
 
