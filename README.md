@@ -4,12 +4,16 @@
 > forked from [ineshbose/Blackjack_CPP](https://github.com/ineshbose/Blackjack_CPP)
 
 > [!NOTE] 
-> WIP, but we won't continue developing it  
-> idea is to have multiplayer mode via webserver, which is pretty much done  
+> WIP, but we won't really continue developing it.  
+> the idea was to have multiplayer mode via webserver, which is pretty much done  
 > but the client has some glitches from time to time  
-> and the server as well (though mostly behaves), has a separate dealer for each player  
+> and the server as well (though should be fine). also, it has a separate dealer for each player  
 
-## 🔧 Setup
+## Installing
+
+we provide pre-compiled binaries for linux, mac and windows, check out [the latest release](https://github.com/jarjk/blackjackpp/releases/latest)
+
+## 🔧 Development Setup
 
 ### Cloning
 ```sh
@@ -19,17 +23,13 @@ cd blackjackpp
 
 ### Building / Compiling
 
-> [!NOTE]
-> if you're using Windows, consider not doing it and choose an OS (if possible), that's not completely dumb and useless  
-> although it does compile, be careful!
-
 #### Meson
 ```sh
 # by default only client is built, see meson.options, *bool* is default
 meson setup build # can be set with -Dclient=[*true*, false] -Dserver=[true, *false*]
 meson compile -C build
-# if not localhost: BLACKJACKPP_SERVER_ADDRESS=$desired_address
+# if not localhost: BJ_ADDR=$desired_address
 ./build/blackjackpp-client
-# if built. needs `asio` dependency from `boost`
+# if built. BJ_LOG=verbose to show full responses
 ./build/blackjackpp-server
 ```
