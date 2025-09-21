@@ -52,9 +52,16 @@ jobs:
           cache-dependency-path: 'build-sys-pip-pkgs.txt'
       - run: pip install -r build-sys-pip-pkgs.txt
 
+      - uses: dorny/paths-filter@v3
+        id: did-change
+        with:
+          filters: |
+            meson:
+              - 'meson.*'
+
       - name: Reconfigure Meson if meson.* changed, or run manually
-        if: github.event_name == 'workflow_dispatch' || contains(join(github.event.commits.*.modified), 'meson.')
-        run: meson setup -Dclient=true -Dserver=true -Ddefault_library=static -Db_vscrt=mt --wipe --buildtype=release --optimization=3 builddir/      
+        if: steps.did-change.outputs.meson == 'true'
+        run: meson setup -Dclient=true -Dserver=true -Ddefault_library=static -Db_vscrt=mt --wipe --buildtype=release --optimization=3 builddir/
 
       - name: compile
         run: meson compile -C builddir/ -v
