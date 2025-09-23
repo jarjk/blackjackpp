@@ -26,7 +26,6 @@ void join(const httplib::Request& req, httplib::Response& res) {
     }
 
     std::string uname = req.get_param_value("username");
-    manager.lock();
 
     auto [p, joined_already] = manager.join_game(uname);
     if (joined_already) {
@@ -51,13 +50,13 @@ void bet(const httplib::Request& req, httplib::Response& res) {
         return;
     }
 
-    manager.lock();
     if (!manager.already_joined(uname)) {
         res.status = 400;
         res.set_content("not joined", "text/plain");
         return;
     }
 
+    auto lock = manager.acquire_lock();
     auto& game = manager.players[uname].game;
     auto& player = game.player;
     if (!player.getHand().empty() && !game.hasEnded()) {
@@ -119,7 +118,7 @@ void move(const httplib::Request& req, httplib::Response& res) {
         }
     }
 
-    manager.lock();
+    auto lock = manager.acquire_lock();
     if (!req.has_param("action")) {
         res.status = 400;
         res.set_content("missing action parameter", "text/plain");
