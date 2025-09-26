@@ -24,12 +24,14 @@ class ServerGame {
 // === Global Game Manager ===
 class GameManager {
    private:
-    std::mutex mtx;
+    mutable std::mutex mtx;
 
    public:
     std::unordered_map<std::string, ServerGame> players;
 
-    void lock() { std::lock_guard lock(this->mtx); }
+    std::unique_lock<std::mutex> acquire_lock() const {
+        return std::unique_lock<std::mutex>(mtx);
+    }
 
     // static std::string generate_id() {
     //     static std::mt19937 rng(std::random_device{}());
@@ -47,7 +49,7 @@ class GameManager {
     }
 
     std::pair<ServerGame*, bool> join_game(const std::string& name) {
-        this->lock();
+        std::lock_guard<std::mutex> lock(this->mtx);
 
         if (this->already_joined(name)) {
             return {&players[name], true};
@@ -64,7 +66,7 @@ class GameManager {
     }
 
     nlohmann::json get_game_state() {
-        this->lock();
+        std::lock_guard<std::mutex> lock(this->mtx);
         nlohmann::json res;
 
         for (auto& [id, p] : players) {
