@@ -20,6 +20,7 @@ void signal_handler(int /*signal*/) {
 }
 // GET /join?username=...
 void join(const httplib::Request& req, httplib::Response& res) {
+    auto lock = manager.acquire_lock();
     if (!req.has_param("username")) {
         res.status = 400;
         res.set_content("missing username", "text/plain");
@@ -27,7 +28,6 @@ void join(const httplib::Request& req, httplib::Response& res) {
     }
 
     std::string uname = req.get_param_value("username");
-    manager.lock();
 
     auto [p, joined_already] = manager.join_game(uname);
     if (joined_already) {
@@ -43,6 +43,7 @@ void join(const httplib::Request& req, httplib::Response& res) {
 
 // POST /bet/<username>?amount=<int>
 void bet(const httplib::Request& req, httplib::Response& res) {
+    auto lock = manager.acquire_lock();
     std::string uname;
     if (!req.matches.empty() && req.matches.size() > 1) {
         uname = req.matches[1];
@@ -52,7 +53,6 @@ void bet(const httplib::Request& req, httplib::Response& res) {
         return;
     }
 
-    manager.lock();
     if (!manager.already_joined(uname)) {
         res.status = 400;
         res.set_content("not joined", "text/plain");
@@ -110,6 +110,7 @@ void bet(const httplib::Request& req, httplib::Response& res) {
 
 // POST /move/<username>?action=[hit, stand]
 void move(const httplib::Request& req, httplib::Response& res) {
+    auto lock = manager.acquire_lock();
     std::string uname;
     if (!req.matches.empty() && req.matches.size() > 1) {
         uname = req.matches[1];
@@ -120,7 +121,6 @@ void move(const httplib::Request& req, httplib::Response& res) {
         }
     }
 
-    manager.lock();
     if (!req.has_param("action")) {
         res.status = 400;
         res.set_content("missing action parameter", "text/plain");
@@ -190,6 +190,7 @@ int main() {
 
     // GET /game_state
     svr.Get("/game_state", [](const httplib::Request&, httplib::Response& res) {
+        auto lock = manager.acquire_lock();
         res.set_content(manager.get_game_state().dump(), "application/json");
     });
 
