@@ -49,8 +49,6 @@ class GameManager {
     }
 
     std::pair<ServerGame*, bool> join_game(const std::string& name) {
-        std::lock_guard<std::mutex> lock(this->mtx);
-
         if (this->already_joined(name)) {
             return {&players[name], true};
         }
@@ -66,7 +64,6 @@ class GameManager {
     }
 
     nlohmann::json get_game_state() {
-        std::lock_guard<std::mutex> lock(this->mtx);
         nlohmann::json res;
 
         for (auto& [id, p] : players) {

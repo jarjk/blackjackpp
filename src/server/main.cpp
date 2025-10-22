@@ -20,6 +20,7 @@ void signal_handler(int /*signal*/) {
 }
 // GET /join?username=...
 void join(const httplib::Request& req, httplib::Response& res) {
+    auto lock = manager.acquire_lock();
     if (!req.has_param("username")) {
         res.status = 400;
         res.set_content("missing username", "text/plain");
@@ -42,6 +43,7 @@ void join(const httplib::Request& req, httplib::Response& res) {
 
 // POST /bet/<username>?amount=<int>
 void bet(const httplib::Request& req, httplib::Response& res) {
+    auto lock = manager.acquire_lock();
     std::string uname;
     if (!req.matches.empty() && req.matches.size() > 1) {
         uname = req.matches[1];
@@ -57,7 +59,6 @@ void bet(const httplib::Request& req, httplib::Response& res) {
         return;
     }
 
-    auto lock = manager.acquire_lock();
     auto& game = manager.players[uname].game;
     auto& player = game.player;
     if (!player.getHand().empty() && !game.hasEnded()) {
@@ -109,6 +110,7 @@ void bet(const httplib::Request& req, httplib::Response& res) {
 
 // POST /move/<username>?action=[hit, stand]
 void move(const httplib::Request& req, httplib::Response& res) {
+    auto lock = manager.acquire_lock();
     std::string uname;
     if (!req.matches.empty() && req.matches.size() > 1) {
         uname = req.matches[1];
@@ -119,7 +121,6 @@ void move(const httplib::Request& req, httplib::Response& res) {
         }
     }
 
-    auto lock = manager.acquire_lock();
     if (!req.has_param("action")) {
         res.status = 400;
         res.set_content("missing action parameter", "text/plain");
@@ -189,6 +190,7 @@ int main() {
 
     // GET /game_state
     svr.Get("/game_state", [](const httplib::Request&, httplib::Response& res) {
+        auto lock = manager.acquire_lock();
         res.set_content(manager.get_game_state().dump(), "application/json");
     });
 
