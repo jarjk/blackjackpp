@@ -8,7 +8,7 @@ set uname bob
 
 function GET
     set resp (curl --silent "$addr/$argv[1]")
-    if not echo $resp | jq
+    if not echo $resp
         echo $resp
     end
     echo
@@ -16,7 +16,7 @@ end
 
 function POST
     set resp (curl --silent -XPOST "$addr/$argv[1]")
-    if not echo $resp | jq
+    if not echo $resp
         echo $resp
     end
     echo
