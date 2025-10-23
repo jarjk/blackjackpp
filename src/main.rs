@@ -1,3 +1,4 @@
+use libjack::{Game, MoveAction};
 use rocket::State;
 use rocket::http::Status;
 use rocket::response::status::Custom as CustomStatus;
@@ -8,88 +9,82 @@ use std::sync::{Arc, Mutex};
 
 mod libjack;
 
+type CustomResp<T> = Result<T, CustomStatus<String>>;
+type GameState = State<Casino>;
+
+fn custom_err<T>(status: Status, msg: &str) -> CustomResp<T> {
+    Err(CustomStatus(status, msg.to_string()))
+}
+
 #[rocket::get("/")]
 fn index() -> &'static str {
     "BlackJack!"
 }
 
 #[rocket::get("/join?<username>")]
-fn join(username: &str, game_state: &State<SvrGame>) -> String {
-    let mut locked_bread = game_state.users.lock().unwrap();
+fn join(username: &str, game_state: &GameState) -> String {
+    let mut locked_bread = game_state.games.lock().unwrap();
     let mut buf = String::new();
-    if !locked_bread.contains_key(username) {
-        locked_bread.insert(username.to_string(), libjack::Game::new());
-        _ = write!(buf, "{username:?} is entering the chat...\n");
+    if locked_bread
+        .get(username)
+        .is_none_or(|g| g.current_state().has_ended())
+    {
+        locked_bread.insert(username.to_string(), Game::new());
+        _ = writeln!(buf, "{username:?} is entering the chat...");
     }
     _ = write!(buf, "everyone now: {:?}", locked_bread.keys());
     buf
 }
 
 #[rocket::post("/bet/<username>?<amount>")]
-fn bet(
-    username: &str,
-    amount: u16,
-    game_state: &State<SvrGame>,
-) -> Result<String, CustomStatus<String>> {
-    let mut games = game_state.users.lock().unwrap();
+fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<String> {
+    let mut games = game_state.games.lock().unwrap();
     let Some(locked_game) = games.get_mut(username) else {
-        return Err(CustomStatus(
-            Status::NotFound,
-            String::from("can't find user"),
-        ));
+        return custom_err(Status::NotFound, "can't find user");
     };
-    if locked_game.player.bet(amount).is_none() {
-        return Err(CustomStatus(
-            Status::PaymentRequired,
-            String::from("not enough money"),
-        ));
+    if locked_game.player.make_bet(amount).is_none() {
+        return custom_err(Status::PaymentRequired, "insufficient money");
+    } else if !locked_game.current_state().is_waiting_bet() {
+        return custom_err(Status::Forbidden, "not waiting for a bet");
     }
-    Ok(format!("{:?}", locked_game.player))
+    locked_game.made_a_bet();
+    Ok(format!("{locked_game}"))
 }
 
+// TODO: abbrs: [h(it), s(tand)]
 #[rocket::post("/move/<username>?<action>")]
-fn r#move(
-    username: &str,
-    action: libjack::MoveAction,
-    game_state: &State<SvrGame>,
-) -> Result<String, CustomStatus<String>> {
-    let mut games = game_state.users.lock().unwrap();
+fn r#move(username: &str, action: MoveAction, game_state: &GameState) -> CustomResp<String> {
+    let mut games = game_state.games.lock().unwrap();
     let Some(locked_game) = games.get_mut(username) else {
-        return Err(CustomStatus(
-            Status::NotFound,
-            String::from("can't find user"),
-        ));
+        return custom_err(Status::NotFound, "can't find user");
     };
-    match action {
-        libjack::MoveAction::Hit => {
-            locked_game.deal_player();
-        }
-        libjack::MoveAction::Stand => {
-            locked_game.deal_dealer();
-        }
+    if locked_game.current_state().has_ended() {
+        return custom_err(Status::Forbidden, "game ended");
+    } else if locked_game.player.get_bet() == 0 {
+        return custom_err(Status::PaymentRequired, "forgot to bet");
     }
-    // if locked_game.player.r#move(amount).is_none() {
-    //     return Err(CustomStatus(
-    //         Status::PaymentRequired,
-    //         String::from("not enough money"),
-    //     ));
-    // }
+    match action {
+        MoveAction::Hit => locked_game.deal_player(),
+        MoveAction::Stand => locked_game.deal_dealer(),
+    }
+    locked_game.update_state(action);
     Ok(format!("{:?}", locked_game.player))
 }
 
 #[rocket::get("/game_state")]
-fn game_state(visitors: &State<HitCount>, state: &State<SvrGame>) -> String {
+fn game_state(visitors: &State<HitCount>, state: &GameState) -> String {
     let count = visitors.count.fetch_add(1, Ordering::Relaxed) + 1;
     format!("{count}: anotheone!\n{state}")
 }
 
 #[derive(Debug, Default, Clone)]
-struct SvrGame {
-    users: Arc<Mutex<HashMap<String, libjack::Game>>>,
+struct Casino {
+    // TODO: one dealer and deck for all players|clients
+    games: Arc<Mutex<HashMap<String, Game>>>,
 }
-impl std::fmt::Display for SvrGame {
+impl std::fmt::Display for Casino {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Ok(users) = self.users.lock() else {
+        let Ok(users) = self.games.lock() else {
             return Err(std::fmt::Error);
         };
         for (name, game) in users.iter() {
@@ -107,8 +102,8 @@ struct HitCount {
 fn rocket() -> _ {
     // log
     let b = AtomicBool::new(true);
-    let x = SvrGame {
-        users: Arc::new(Mutex::new(HashMap::new())),
+    let x = Casino {
+        games: Arc::new(Mutex::new(HashMap::new())),
     };
 
     rocket::build() // :5225 = jack

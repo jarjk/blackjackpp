@@ -189,8 +189,13 @@ impl Player {
         self.hand.add_card(card);
     }
 
+    /// get what the player's bet
+    pub fn get_bet(&self) -> u16 {
+        self.bet
+    }
+
     /// None if not enough wealth.
-    pub fn bet(&mut self, amount: u16) -> Option<()> {
+    pub fn make_bet(&mut self, amount: u16) -> Option<()> {
         self.wealth = self.wealth.checked_sub(amount)?;
         self.bet = amount;
         Some(())
