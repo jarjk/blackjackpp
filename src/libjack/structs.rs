@@ -213,7 +213,7 @@ impl Player {
         self.hand.value()
     }
 
-    /// adds or substracts `bet` from `wealth` if state is `has_ended`
+    /// adds or subtracts `bet` from `wealth` if state is `has_ended`
     /// resets `bet` to 0
     pub fn pay_out(&mut self, state: JackState) {
         if !state.has_ended() {
@@ -273,11 +273,6 @@ pub struct Hand {
 }
 
 impl Hand {
-    /// Reset the hand to it's default state.
-    pub fn reset(&mut self) {
-        *self = Self::default();
-    }
-
     /// Adds a card to the hand.
     pub fn add_card(&mut self, card: Card) {
         self.cards.push(card);
