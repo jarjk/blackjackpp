@@ -11,6 +11,24 @@ pub struct Game {
     state: State,
 }
 impl Game {
+    /// called once a bet is made
+    pub fn init(&mut self) {
+        self.dealer.add_card(self.deck.deal_card());
+        self.player.add_card(self.deck.deal_card());
+        self.dealer.add_card(self.deck.deal_card());
+        self.player.add_card(self.deck.deal_card());
+        // hole card check (USA)
+        let state = if self.player.value() == 21 && self.dealer.value() == 21 {
+            State::Push
+        } else if self.player.value() == 21 {
+            State::PlayerJack
+        } else if self.dealer.value() == 21 {
+            State::DealerJack
+        } else {
+            State::WaitingBet
+        };
+        self.state = state;
+    }
     pub fn deal_dealer(&mut self) {
         // S17: stand on soft 17
         while self.dealer.value() < 17 {
@@ -20,36 +38,16 @@ impl Game {
     pub fn deal_player(&mut self) {
         self.player.add_card(self.deck.deal_card());
     }
-    pub fn new() -> Game {
-        let mut deck = structs::Deck::init();
-        let mut dealer = structs::Hand::default();
-        let mut player = structs::Player::default();
-        dealer.add_card(deck.deal_card());
-        player.add_card(deck.deal_card());
-        dealer.add_card(deck.deal_card());
-        player.add_card(deck.deal_card());
-        // hole card check (USA)
-        let state = if player.value() == 21 && dealer.value() == 21 {
-            State::Push
-        } else if player.value() == 21 {
-            State::PlayerJack
-        } else if dealer.value() == 21 {
-            State::DealerJack
-        } else {
-            State::WaitingBet
-        };
-        // TODO: handle wealth, statistics
-        Game {
-            deck,
-            dealer,
-            player,
-            state,
-        }
+    /// redeal cards, but remember wealth
+    pub fn play_again(&mut self) {
+        let player_wealth = self.player.wealth;
+        *self = Self::default();
+        self.player.wealth = player_wealth;
     }
     pub fn current_state(&self) -> State {
         self.state
     }
-    /// NOTE: BlackJack is handled in [`Self::new`]
+    /// NOTE: `BlackJack` is handled in [`Self::init`]
     fn new_state(&self, action: MoveAction) -> State {
         let p_value = self.player.value();
         let d_value = self.dealer.value();
@@ -64,19 +62,26 @@ impl Game {
         } else if p_value < 17 && d_value < 17 || action == MoveAction::Hit {
             return State::Ongoing;
         }
-        // no further actions to be taken, let's just see who's got a bigger penis
+        // no further actions to be taken, let's just see who's got the bigger penis
         match p_value.cmp(&d_value) {
             Ordering::Less => State::DealerWin,
             Ordering::Equal => State::Push,
             Ordering::Greater => State::PlayerWin,
         }
     }
-    pub fn made_a_bet(&mut self) {
-        self.state = State::Ongoing;
-    }
     pub fn update_state(&mut self, action: MoveAction) {
         self.state = self.new_state(action);
-        // TODO: handle wealth, statistics
+        self.player.pay_out(self.state);
+    }
+}
+impl Default for Game {
+    fn default() -> Self {
+        Game {
+            deck: structs::Deck::init(),
+            dealer: structs::Hand::default(),
+            player: structs::Player::default(),
+            state: State::WaitingBet,
+        }
     }
 }
 
@@ -85,7 +90,7 @@ impl std::fmt::Display for Game {
         // TODO: don't give dealer cards away
         write!(
             f,
-            "{:?}, Dealer: {{ {:?} }}, Outcome: {{ {:?} }}",
+            "{:?}, Dealer: {{ {:?} }}, State: {{ {:?} }}",
             self.player, self.dealer, self.state
         )
     }

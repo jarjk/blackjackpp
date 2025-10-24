@@ -1,7 +1,9 @@
 //! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
+use crate::libjack::State as JackState;
 use std::fmt;
+
 // TODO: serde
 
 /// Represents the four suits of a card deck.
@@ -171,19 +173,22 @@ impl Deck {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Player {
     hand: Hand,
-    wealth: u16,
+    pub wealth: u16,
     bet: u16,
 }
 impl Default for Player {
     fn default() -> Self {
         Self {
             hand: Default::default(),
-            wealth: 1000,
+            wealth: Player::DEF_WEALTH,
             bet: 0,
         }
     }
 }
 impl Player {
+    pub const DEF_WEALTH: u16 = 1000;
+    // pub fn new(wealth: u16) -> Self { }
+
     /// Adds a card to the hand.
     pub fn add_card(&mut self, card: Card) {
         self.hand.add_card(card);
@@ -194,8 +199,11 @@ impl Player {
         self.bet
     }
 
-    /// None if not enough wealth.
+    /// `None` if: already made a bet or not enough wealth.
     pub fn make_bet(&mut self, amount: u16) -> Option<()> {
+        if self.bet != 0 {
+            return None;
+        }
         self.wealth = self.wealth.checked_sub(amount)?;
         self.bet = amount;
         Some(())
@@ -204,6 +212,58 @@ impl Player {
     pub fn value(&self) -> u8 {
         self.hand.value()
     }
+
+    /// adds or substracts `bet` from `wealth` if state is `has_ended`
+    /// resets `bet` to 0
+    pub fn pay_out(&mut self, state: JackState) {
+        if !state.has_ended() {
+            return;
+        }
+        assert_ne!(self.bet, 0);
+        let multip = match state {
+            JackState::PlayerJack => 3, // (+orig_bet + 2*bet) yep, we're generous
+            JackState::PlayerWin | JackState::DealerBust => 2, // +orig_bet+bet
+            JackState::Push => 1,       // +orig_bet
+            JackState::DealerJack | JackState::PlayerBust | JackState::DealerWin => 0, // -orig_bet
+            _ => unreachable!("has ended"),
+        };
+        self.wealth += self.bet * multip;
+        self.bet = 0;
+        // JackState::WaitingBet
+    }
+}
+#[test]
+fn payout() {
+    let mut p = Player::default();
+    const BET: u16 = 100;
+    p.make_bet(BET).unwrap(); // -1bet
+    assert_eq!(p.bet, BET);
+    assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
+    p.pay_out(JackState::PlayerJack); // + 3bet
+    assert_eq!(p.wealth, Player::DEF_WEALTH + 2 * BET);
+    p.make_bet(BET).unwrap(); // -1bet
+    p.pay_out(JackState::DealerJack);
+    assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
+    p.make_bet(BET).unwrap(); // -1bet
+    p.pay_out(JackState::DealerWin);
+    assert_eq!(p.wealth, Player::DEF_WEALTH);
+    p.make_bet(BET).unwrap(); // -1bet
+    p.pay_out(JackState::DealerBust); // +2bet
+    assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
+    p.make_bet(BET).unwrap(); // -1bet
+    p.pay_out(JackState::PlayerBust);
+    p.make_bet(BET).unwrap(); // -1bet
+    p.pay_out(JackState::DealerJack);
+    p.make_bet(BET).unwrap(); // -1bet
+    assert!(p.make_bet(BET).is_none()); // don't bet twice
+    p.pay_out(JackState::Push); // +1bet
+    assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
+    for _ in 0..9 {
+        p.make_bet(BET).unwrap(); // -1bet
+        p.pay_out(JackState::DealerWin);
+    }
+    assert_eq!(p.wealth, 0);
+    assert!(p.make_bet(BET).is_none()); // no money
 }
 
 // Represents a player's or dealer's hand.
