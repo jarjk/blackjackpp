@@ -119,13 +119,17 @@ struct ClientGame {
         while (true) {
             tui::cursor::restore();
             std::cout << tui::string("\n\nH : Hit | S : Stand\n").yellow().blink();
-            int c = toupper(Input::read_ch());
-            if (c != 'H' && c != 'S') {
+            int c = tolower(Input::read_ch());
+            std::string action;
+            if (c == 'h') {
+                action = "hit";
+            } else if (c == 's') {
+                action = "stand";
+            } else {
                 continue;
             }
 
-            auto res = cli.Post(tui::concat("/move/", this->game.player.getName(),
-                                            "?action=", static_cast<char>(tolower(c))));
+            auto res = cli.Post(tui::concat("/move/", this->game.player.getName(), "?action=", action));
 
             if (res.value().status != 200) {
                 std::cerr << res.value().body;

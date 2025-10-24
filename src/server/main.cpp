@@ -135,9 +135,9 @@ void move(const httplib::Request& req, httplib::Response& res) {
         return;
     }
 
-    if (action_s == "hit" || action_s == "h") {
+    if (action_s == "hit") {
         game.deal1_player();
-    } else if (action_s == "stand" || action_s == "s") {
+    } else if (action_s == "stand") {
         std::cerr << "standing...\n";
         game.player.setStood(true);
         game.dealDealer();

@@ -56,7 +56,6 @@ fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<String
     Ok(locked_game.to_string())
 }
 
-// TODO: abbrs: [h(it), s(tand)]
 #[rocket::post("/move/<username>?<action>")]
 fn r#move(username: &str, action: MoveAction, game_state: &GameState) -> CustomResp<String> {
     let mut games = game_state.games.lock().unwrap();
