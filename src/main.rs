@@ -1,7 +1,7 @@
 use libjack::{Game, MoveAction};
-use rocket::State;
-use rocket::http::Status;
 use rocket::response::status::Custom as CustomStatus;
+use rocket::serde::{Serialize, json::Json};
+use rocket::{State, http::Status};
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::sync::{Arc, Mutex, atomic};
@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, atomic};
 mod libjack;
 
 type CustomResp<T> = Result<T, CustomStatus<String>>;
-type GameState = State<BlackJack>;
+type GameState = State<Arc<Mutex<BlackJack>>>;
 
 fn custom_err<T>(status: Status, msg: &str) -> CustomResp<T> {
     Err(CustomStatus(status, msg.to_string()))
@@ -22,7 +22,7 @@ fn index() -> &'static str {
 
 #[rocket::get("/join?<username>")]
 fn join(username: &str, game_state: &GameState) -> CustomResp<String> {
-    let mut locked_bread = game_state.games.lock().unwrap();
+    let locked_bread = &mut game_state.lock().unwrap().games;
     let mut buf = String::new();
     if let Some(locked_game) = locked_bread.get_mut(username) {
         if locked_game.current_state().has_ended() {
@@ -40,8 +40,8 @@ fn join(username: &str, game_state: &GameState) -> CustomResp<String> {
 }
 
 #[rocket::post("/bet/<username>?<amount>")]
-fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<String> {
-    let mut games = game_state.games.lock().unwrap();
+fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<Json<Game>> {
+    let games = &mut game_state.lock().unwrap().games;
     let Some(locked_game) = games.get_mut(username) else {
         return custom_err(Status::NotFound, "can't find user");
     };
@@ -52,12 +52,12 @@ fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<String
     }
     locked_game.init();
     locked_game.player.pay_out(locked_game.current_state());
-    Ok(locked_game.to_string())
+    Ok(Json(locked_game.clone()))
 }
 
 #[rocket::post("/move/<username>?<action>")]
-fn r#move(username: &str, action: MoveAction, game_state: &GameState) -> CustomResp<String> {
-    let mut games = game_state.games.lock().unwrap();
+fn r#move(username: &str, action: MoveAction, game_state: &GameState) -> CustomResp<Json<Game>> {
+    let games = &mut game_state.lock().unwrap().games;
     let Some(locked_game) = games.get_mut(username) else {
         return custom_err(Status::NotFound, "can't find user");
     };
@@ -71,26 +71,40 @@ fn r#move(username: &str, action: MoveAction, game_state: &GameState) -> CustomR
         MoveAction::Stand => locked_game.deal_dealer(),
     }
     locked_game.update_state(action);
-    Ok(format!("{:?}", locked_game.player))
+    Ok(Json(locked_game.clone()))
+}
+
+#[rocket::get("/game_state/<username>")]
+fn game_state_of(username: &str, state: &GameState) -> Option<Json<BlackJack>> {
+    let state = &state.lock().unwrap();
+    if username.is_empty() || !state.games.contains_key(username) {
+        None
+    } else {
+        Some(Json(BlackJack {
+            games: HashMap::from([(username.to_string(), (*state).games[username].clone())]),
+        }))
+    }
 }
 
 #[rocket::get("/game_state")]
-fn game_state(visitor_count: &State<atomic::AtomicUsize>, state: &GameState) -> String {
+fn game_state(visitor_count: &State<atomic::AtomicUsize>, state: &GameState) -> Json<BlackJack> {
     let count = visitor_count.fetch_add(1, atomic::Ordering::Relaxed) + 1;
-    format!("{count}: anotheone!\n{state}")
+    let state = &state.lock().unwrap();
+    eprintln!("{count}: anotheone!\n{state}");
+    Json((*state).clone()) // PERF: shit!
 }
 
-#[derive(Debug, Default, Clone)]
+type Games = HashMap<String, Game>;
+
+#[derive(Debug, Default, Clone, Serialize)]
+#[serde(crate = "rocket::serde")]
 struct BlackJack {
     // TODO: one dealer and deck for all players|clients
-    games: Arc<Mutex<HashMap<String, Game>>>,
+    games: Games,
 }
 impl std::fmt::Display for BlackJack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let Ok(users) = self.games.lock() else {
-            return Err(std::fmt::Error);
-        };
-        for (name, game) in users.iter() {
+        for (name, game) in &self.games {
             writeln!(f, "{name}: {game}")?;
         }
         Ok(())
@@ -101,13 +115,16 @@ impl std::fmt::Display for BlackJack {
 fn rocket() -> _ {
     // TODO: custom logging?
     let blackjack = BlackJack {
-        games: Arc::new(Mutex::new(HashMap::new())),
+        games: HashMap::new(),
     };
 
     rocket::build() // see Rocket.toml
-        .manage(blackjack)
+        .manage(Arc::new(Mutex::new(blackjack)))
         .manage(atomic::AtomicUsize::new(0))
-        .mount("/", rocket::routes![index, join, bet, r#move, game_state])
+        .mount(
+            "/",
+            rocket::routes![index, join, bet, r#move, game_state, game_state_of],
+        )
         .mount("/help", rocket::routes![index])
     // GET help
     // GET join

@@ -2,7 +2,7 @@
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
 use crate::libjack::State as JackState;
-use rocket::serde::{Deserialize, Serialize};
+use rocket::serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::fmt;
 
 // TODO: serde
@@ -19,9 +19,20 @@ pub enum Suit {
 impl Suit {
     pub const ALL: [Suit; 4] = [Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades];
 }
+impl fmt::Display for Suit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Suit::Hearts => "♥",
+            Suit::Diamonds => "♦",
+            Suit::Clubs => "♣",
+            Suit::Spades => "♠",
+        };
+        f.write_str(str)
+    }
+}
 
 /// Represents the 13 ranks of a card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub enum Rank {
     Two,
@@ -38,22 +49,41 @@ pub enum Rank {
     King,
     Ace,
 }
+impl fmt::Display for Rank {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Rank::Jack => "J",
+            Rank::Queen => "Q",
+            Rank::King => "K",
+            Rank::Ace => "A",
+            num => &num.as_u8().to_string(), // 2..=10
+        };
+        f.write_str(str)
+    }
+}
+
+impl Serialize for Rank {
+    fn serialize<S: rocket::serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+        // let mut rank = serializer.serialize_struct("Rank", 2)?;
+        // rank.serialize_field("as_str", &self.to_string())?;
+        // rank.serialize_field("as_u8", &self.as_u8())?;
+        // rank.end()
+    }
+}
 
 impl Rank {
+    /// think of it as an id
+    pub fn as_u8(self) -> u8 {
+        self as u8 + 2
+    }
     /// Returns the primary blackjack value for a card rank.
     /// Ace is initially counted as 11.
     pub fn value_hint(self) -> u8 {
         match self {
-            Rank::Two => 2,
-            Rank::Three => 3,
-            Rank::Four => 4,
-            Rank::Five => 5,
-            Rank::Six => 6,
-            Rank::Seven => 7,
-            Rank::Eight => 8,
-            Rank::Nine => 9,
-            Rank::Ten | Rank::Jack | Rank::Queen | Rank::King => 10,
+            Rank::Jack | Rank::Queen | Rank::King => 10,
             Rank::Ace => 11,
+            num => num as u8 + 2,
         }
     }
     pub const ALL: [Rank; 13] = [
@@ -90,28 +120,7 @@ impl Card {
 /// For displaying the card in a user-friendly way.
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let rank = match self.rank {
-            Rank::Two => "2",
-            Rank::Three => "3",
-            Rank::Four => "4",
-            Rank::Five => "5",
-            Rank::Six => "6",
-            Rank::Seven => "7",
-            Rank::Eight => "8",
-            Rank::Nine => "9",
-            Rank::Ten => "10",
-            Rank::Jack => "J",
-            Rank::Queen => "Q",
-            Rank::King => "K",
-            Rank::Ace => "A",
-        };
-        let suit = match self.suit {
-            Suit::Hearts => "♥",
-            Suit::Diamonds => "♦",
-            Suit::Clubs => "♣",
-            Suit::Spades => "♠",
-        };
-        write!(f, "{rank}{suit}")
+        write!(f, "{}{}", self.rank, self.suit)
     }
 }
 
@@ -205,9 +214,9 @@ impl Player {
         self.bet
     }
 
-    /// `None` if: already made a bet or not enough wealth.
+    /// `None` if: already made a bet, making a 0 bet, or not enough wealth.
     pub fn make_bet(&mut self, amount: u16) -> Option<()> {
-        if self.bet != 0 {
+        if self.bet != 0 || amount == 0 {
             return None;
         }
         self.wealth = self.wealth.checked_sub(amount)?;
@@ -273,10 +282,18 @@ fn payout() {
 }
 
 // Represents a player's or dealer's hand.
-#[derive(Default, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Default, Clone, PartialEq, Eq, Deserialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Hand {
     cards: Vec<Card>,
+}
+impl Serialize for Hand {
+    fn serialize<S: rocket::serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut state = serializer.serialize_struct("Hand", 2)?;
+        state.serialize_field("cards", &self.cards)?;
+        state.serialize_field("value", &self.value())?;
+        state.end()
+    }
 }
 
 impl Hand {
@@ -305,6 +322,17 @@ impl Hand {
         }
 
         value
+    }
+
+    /// returns what's not a secret
+    pub fn get(self, public: bool) -> Self {
+        if public {
+            self
+        } else {
+            Self {
+                cards: self.cards.into_iter().take(1).collect(),
+            }
+        }
     }
 }
 

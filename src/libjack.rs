@@ -1,16 +1,27 @@
-use rocket::serde::{Deserialize, Serialize};
+use rocket::serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::cmp::Ordering;
 
 mod structs;
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(crate = "rocket::serde")]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Game {
     // TODO: statistics?
     deck: structs::Deck,
     dealer: structs::Hand,
     pub player: structs::Player,
     state: State,
+}
+
+impl Serialize for Game {
+    fn serialize<S: rocket::serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut state = serializer.serialize_struct("Game", 4)?;
+        state.skip_field("deck")?;
+        state.serialize_field("dealer", &self.dealer.clone().get(self.state.has_ended()))?;
+        state.serialize_field("player", &self.player)?;
+        state.serialize_field("state", &self.state)?;
+        state.serialize_field("winner", &self.state.winner_ch())?;
+        state.end()
+    }
 }
 impl Game {
     /// called once a bet is made
@@ -88,11 +99,12 @@ impl Default for Game {
 
 impl std::fmt::Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TODO: don't give dealer cards away
         write!(
             f,
             "{:?}, Dealer: {{ {:?} }}, State: {{ {:?} }}",
-            self.player, self.dealer, self.state
+            self.player,
+            self.dealer.clone().get(self.state.has_ended()),
+            self.state
         )
     }
 }
@@ -127,5 +139,15 @@ impl State {
     }
     pub fn has_ended(self) -> bool {
         !(self.is_ongoing() || self.is_waiting_bet())
+    }
+    /// Player, Dealer, Equal, False
+    // TODO: #[deprecated = "make clients use state itself?"]
+    pub fn winner_ch(self) -> char {
+        match self {
+            State::WaitingBet | State::Ongoing => 'f',
+            State::PlayerJack | State::DealerBust | State::PlayerWin => 'p',
+            State::DealerJack | State::PlayerBust | State::DealerWin => 'd',
+            State::Push => 'e',
+        }
     }
 }
