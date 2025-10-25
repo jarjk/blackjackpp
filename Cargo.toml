@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 fastrand = "2.3.0"
-rocket = { version = "0.5.1", default-features = false }
+rocket = { version = "0.5.1", default-features = false, features = ["json"] }

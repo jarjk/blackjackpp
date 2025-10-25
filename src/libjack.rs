@@ -1,8 +1,10 @@
+use rocket::serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 mod structs;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
 pub struct Game {
     // TODO: statistics?
     deck: structs::Deck,
@@ -95,14 +97,16 @@ impl std::fmt::Display for Game {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, rocket::FromFormField)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
 pub enum MoveAction {
     // TODO: double-down, surrender, insurance, splitting?
     Hit,
     Stand,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, rocket::FromFormField)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
 pub enum State {
     WaitingBet,
     Ongoing,
