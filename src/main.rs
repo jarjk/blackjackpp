@@ -21,7 +21,7 @@ fn index() -> &'static str {
 }
 
 #[rocket::get("/join?<username>")]
-fn join(username: &str, game_state: &GameState) -> String {
+fn join(username: &str, game_state: &GameState) -> CustomResp<String> {
     let mut locked_bread = game_state.games.lock().unwrap();
     let mut buf = String::new();
     if let Some(locked_game) = locked_bread.get_mut(username) {
@@ -29,14 +29,14 @@ fn join(username: &str, game_state: &GameState) -> String {
             locked_game.play_again();
             _ = writeln!(buf, "{username:?} is up for a new game...");
         } else {
-            _ = writeln!(buf, "{username:?} shouldn't join twice!"); // TODO: err code resp
+            return custom_err(Status::Forbidden, "shouldn't join twice");
         }
     } else if !locked_bread.contains_key(username) {
         locked_bread.insert(username.to_string(), Game::default());
         _ = writeln!(buf, "{username:?} is entering the chat...");
     }
     _ = write!(buf, "everyone now: {:?}", locked_bread.keys());
-    buf
+    Ok(buf)
 }
 
 #[rocket::post("/bet/<username>?<amount>")]
@@ -46,10 +46,9 @@ fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<String
         return custom_err(Status::NotFound, "can't find user");
     };
     if !locked_game.current_state().is_waiting_bet() {
-        // might be up to something cheeky
-        return custom_err(Status::Forbidden, "not waiting for a bet");
+        return custom_err(Status::Forbidden, "not waiting for a bet"); // might be up to something cheeky
     } else if locked_game.player.make_bet(amount).is_none() {
-        return custom_err(Status::PaymentRequired, "insufficient money, no bet");
+        return custom_err(Status::PaymentRequired, "insufficient money, or no bet");
     }
     locked_game.init();
     locked_game.player.pay_out(locked_game.current_state());

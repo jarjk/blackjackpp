@@ -18,16 +18,15 @@ impl Game {
         self.dealer.add_card(self.deck.deal_card());
         self.player.add_card(self.deck.deal_card());
         // hole card check (USA)
-        let state = if self.player.value() == 21 && self.dealer.value() == 21 {
+        self.state = if self.player.value() == 21 && self.dealer.value() == 21 {
             State::Push
         } else if self.player.value() == 21 {
             State::PlayerJack
         } else if self.dealer.value() == 21 {
             State::DealerJack
         } else {
-            State::WaitingBet
+            State::Ongoing
         };
-        self.state = state;
     }
     pub fn deal_dealer(&mut self) {
         // S17: stand on soft 17
