@@ -1,4 +1,4 @@
-name: Automatic trigger draft release on tag push
+name: Automatic draft release on tag push
 
 on:
   push:

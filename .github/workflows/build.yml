@@ -53,7 +53,7 @@ jobs:
       - run: pip install -r build-sys-pip-pkgs.txt
 
       - name: Reconfigure Meson
-        run: meson setup -Dclient=true -Dserver=true -Ddefault_library=static -Db_vscrt=mt --wipe --buildtype=release --optimization=3 builddir/
+        run: meson setup -Ddefault_library=static -Db_vscrt=mt --wipe --buildtype=release --optimization=3 builddir/
 
       - name: compile
         run: meson compile -C builddir/ -v
@@ -78,5 +78,3 @@ jobs:
           path: |
             builddir/blackjackpp-client
             builddir/blackjackpp-client.exe
-            builddir/blackjackpp-server
-            builddir/blackjackpp-server.exe
