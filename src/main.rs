@@ -81,7 +81,7 @@ fn game_state_of(username: &str, state: &GameState) -> Option<Json<BlackJack>> {
         None
     } else {
         Some(Json(BlackJack {
-            games: HashMap::from([(username.to_string(), (*state).games[username].clone())]),
+            games: HashMap::from([(username.to_string(), state.games[username].clone())]),
         }))
     }
 }
