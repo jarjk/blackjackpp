@@ -35,6 +35,7 @@ Checks:
   -cppcoreguidelines-avoid-non-const-global-variables,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
   -google-readability-todo,
   -google-explicit-constructor,
   -google-build-using-namespace,
@@ -43,6 +44,7 @@ Checks:
   -fuchsia-default-arguments-declarations,
   -fuchsia-default-arguments-calls,
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
   -readability-identifier-length,
   -readability-magic-numbers,
   -altera-struct-pack-align,
@@ -102,7 +104,6 @@ Checks:
   # -llvmlibc-implementation-in-namespace
   # -llvmlibc-restrict-system-libc-headers
   # -modernize-avoid-c-arrays
-  # -modernize-use-nodiscard
   # -modernize-use-trailing-return-type
   # -readability-identifier-length
   # -readability-isolate-declaration

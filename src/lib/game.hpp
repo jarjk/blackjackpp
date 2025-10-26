@@ -18,7 +18,7 @@ class Game {
     Player player;  // Player in the game (user)
     Dealer dealer;  // Dealer in the game
 
-    void printTop() {
+    void printTop() const {
         tui::screen::clear();
         tui::cursor::home();
         std::cout << tui::string(utils::raw_mode_converter(Print::title_blackjack())).yellow() << "\n\r";

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -37,34 +38,39 @@ struct ClientGame {
     bool startBet() {
         tui::screen::clear();
         tui::cursor::home();
-        if (this->game.player.getCash() > 0) {
-            while (true) {
-                this->game.printTop();
-                std::cout << "Place your bet!\t\t $" << tui::string(this->game.player.getBet()).green()
-                          << "\r\n[W = Raise Bet | S = Decrease Bet | R = Done]\n";
-                switch (Input::read_ch()) {
-                    case 'w':
-                        if (this->game.player.getCash() >= 5) {
-                            this->game.player.setBet(5);
-                        }
-                        break;
-                    case 's':
-                        if (this->game.player.getBet() >= 5) {
-                            this->game.player.setBet(-5);
-                        }
-                        break;
-                    case 'r':
-                    case '\n':  // this doesn't work for whatever reason
-                    case 13:    // enter
-                        if (this->game.player.getBet() == 0) {
-                            continue;
-                        }
-                        return true;
-                    default:
-                        break;
-                }
+        if (this->game.player.getCash() + this->game.player.getBet() <= 0) {
+            return false;  // bankrupt :(
+        }
+        while (true) {
+            this->game.printTop();
+            std::cout << "Place your bet!\r\n[wW = Raise Bet | sS = Decrease Bet | R = Done]\n";
+            char ch = Input::read_ch();
+            bool big = isupper(ch) != 0;
+            int amount = big ? 50 : 5;
+            switch (tolower(ch)) {
+                case 'w':
+                    if (this->game.player.getCash() >= amount) {
+                        this->game.player.makeBet(amount);
+                    }
+                    break;
+                case 's':
+                    if (this->game.player.getBet() >= amount) {
+                        this->game.player.makeBet(-amount);
+                    }
+                    break;
+                case 'r':
+                case '\n':  // this doesn't work for whatever reason
+                case 13:    // enter
+                    if (this->game.player.getBet() == 0) {
+                        continue;
+                    }
+                    return true;
+                case 3:  // ^C
+                    throw std::runtime_error("premature exit, the user doesn't want to play anymore :(");
+
+                default:
+                    break;
             }
-            return true;
         }
         return false;
     }
@@ -73,13 +79,16 @@ struct ClientGame {
         auto gs_json = json::parse(gs.value().body);
         // std::cerr << gs_json << "\n\r";
         // Input::read_ch();
-        auto cash = gs_json["games"][this->game.player.getName()]["player"]["wealth"].get<int>();
-        this->game.player.setCash(cash);
+        this->game.player.setCash(
+            gs_json["games"][this->game.player.getName()]["player"]["wealth"].get<int>());
+        auto prev_bet = this->game.player.getBet();
+        this->game.player.setBet(0);
+        this->game.player.makeBet(prev_bet);
 
         if (!this->startBet()) {
             utils::cls();
             tui::cursor::set_position(tui::screen::size().first / 2, (tui::screen::size().second / 2) - 9);
-            std::cout << tui::string("Bankrupt! Game over.").yellow();
+            std::cout << tui::string("Bankrupt? Game over.").yellow();
             Input::read_ch();
             return;  // TODO dont panic
         }
@@ -96,7 +105,10 @@ struct ClientGame {
         auto res_json = json::parse(unwrap_or(res).body);
 
         this->game.player.setAllCards(res_json["player"]["hand"]["cards"].get<std::vector<Card>>());
+        this->game.player.setSum(res_json["player"]["hand"]["value"]);
+
         this->game.dealer.setAllCards(res_json["dealer"]["cards"].get<std::vector<Card>>());
+        this->game.dealer.setSum(res_json["dealer"]["value"]);
 
         utils::cls();
         switch (res_json["winner"].get<std::string>().at(0)) {
@@ -129,6 +141,8 @@ struct ClientGame {
                 action = "hit";
             } else if (c == 's') {
                 action = "stand";
+            } else if (c == 3) {
+                throw std::runtime_error("premature exit, the user doesn't want to play anymore :(");
             } else {
                 continue;
             }
@@ -143,7 +157,10 @@ struct ClientGame {
             auto res_json = json::parse(unwrap_or(res).body);
 
             this->game.player.setAllCards(res_json["player"]["hand"]["cards"].get<std::vector<Card>>());
+            this->game.player.setSum(res_json["player"]["hand"]["value"]);
+
             this->game.dealer.setAllCards(res_json["dealer"]["cards"].get<std::vector<Card>>());
+            this->game.dealer.setSum(res_json["dealer"]["value"]);
 
             if (res_json["winner"].is_null() || res_json["winner"] == "f") {
                 this->game.printTop();
@@ -195,6 +212,6 @@ struct ClientGame {
         //     saveGame();
         // }
 
-        Input::read_ch();
+        // Input::read_ch();
     }
 };

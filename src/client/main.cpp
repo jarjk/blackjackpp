@@ -1,3 +1,5 @@
+#include <exception>
+#include <stdexcept>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -14,7 +16,7 @@
 #include "print.hpp"
 #include "utils.hpp"
 
-void help(httplib::Client& cli);
+void help();
 void run(ClientGame& cg, httplib::Client& cli);
 static inline void connect(httplib::Client& cli, ClientGame& cg);
 
@@ -45,9 +47,11 @@ int main() {
 
     try {
         run(cg, cli);
-    } catch (...) {
+    } catch (const std::exception& e) {
         tui::reset();
-        std::cerr << "\nran into a fatal, unexpected error, sorry...\n";
+        std::cerr << "\nsorry, the app ran into a fatal, unexpected error.\nall we know about it is this: '"
+                  << e.what() << "'\n";
+        cli.stop();
         return 1;
     }
 
@@ -74,11 +78,10 @@ void run(ClientGame& cg, httplib::Client& cli) {
                 connect(cli, cg);
                 do {
                     {
+                        // not joining actually, just rejoining, so playing again
                         auto res = cli.Get(std::format("/join?username={}", cg.game.player.getName()));
                         if (!res) {
-                            tui::reset();
-                            std::cout << "got no response from server\n";
-                            exit(0);
+                            throw std::runtime_error("got no response from server");
                         }
                         if (res.value().status == 200) {
                             cg.game.player.clearCards();
@@ -95,7 +98,7 @@ void run(ClientGame& cg, httplib::Client& cli) {
                 } while (std::tolower(c) != 'n' && c != SpecKey::CtrlC);
                 break;
             case '2':
-                help(cli);
+                help();
                 Input::read_ch();
                 break;
             case 'q':
@@ -106,12 +109,10 @@ void run(ClientGame& cg, httplib::Client& cli) {
     } while (c != 'q');
 }
 
-void help(httplib::Client& cli) {
-    auto res = unwrap_or(cli.Get("/help"));
-
+void help() {
     tui::screen::clear();
     tui::cursor::home();
-    std::cout << tui::string(utils::raw_mode_converter(res.body)).green();
+    std::cout << tui::string(utils::raw_mode_converter(Print::instructions())).green();
 }
 
 void connect(httplib::Client& cli, ClientGame& cg) {
@@ -135,9 +136,7 @@ void connect(httplib::Client& cli, ClientGame& cg) {
         auto res = cli.Get(std::format("/join?username={}", username));
 
         if (!res) {
-            tui::reset();
-            std::cout << "got no response from server\n";
-            exit(0);
+            throw std::runtime_error("got no response from server");
         }
 
         if (res.value().status == 200) {

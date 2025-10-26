@@ -8,44 +8,15 @@
 class Human {
    protected:
     std::vector<Card> hand;
-    int sum;
+    int sum = 0;
 
    public:
-    Human() : sum(0) {}
-    void setAllCards(const std::vector<Card>& manycards) {
-        this->clearCards();
-        for (const auto& card : manycards) {
-            this->addCard(card);
-        }
-    };
+    void setAllCards(const std::vector<Card>& manycards) { this->hand = manycards; };
     std::vector<Card> getHand() const { return this->hand; }
 
-    int getSum() {
-        // switchAce();
-        return this->sum;
-    }
+    int getSum() const { return this->sum; }
     void setSum(int sum) { this->sum = sum; }
-    // Switches Ace between 1 and 11
-    void switchAce() {
-        if (this->sum > 21) {
-            for (auto& i : this->hand) {
-                if (i.getNumber() == 1 && !(i.getBlock())) {
-                    i.setBlock(true);
-                    this->sum -= 10;
-                    return;
-                }
-            }
-        }
-    }
-    void addCard(Card c) {
-        this->hand.push_back(c);
-        if (c.getNumber() > 10) {
-            c.setNumber(10);
-        } else if (c.getNumber() == 1) {
-            c.setNumber(11);
-        }
-        this->sum += c.getNumber();
-    }
+    void addCard(Card c) { this->hand.push_back(c); }
     void clearCards() {
         this->hand.clear();
         this->sum = 0;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <format>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -9,24 +8,16 @@
 
 class Card {
    private:
-    int number;  // Card Number
-    char suit;   // Card Suit
-    bool block;  // Boolean value for Ace Switching
+    int number = 0;    // Card Number
+    char suit = '\0';  // Card Suit
 
    public:
-    // Default Constructor
-    Card() : number(0), suit('\0'), block(false) {}
-    // Parameterised Constructor (for initializing deck)
-    Card(int no, char s) : number(no), suit(s), block(false) {}
     // Getter Functions
     int getNumber() const { return this->number; }
-
     char getSuit() const { return this->suit; }
-    bool getBlock() const { return this->block; }
     // Setter Functions
     void setNumber(int no) { this->number = no; }
     void setSuit(char c) { this->suit = c; }
-    void setBlock(bool b) { this->block = b; }
     // Printing Card Details
     char getPrintNumber() const {
         switch (this->number) {
@@ -77,14 +68,6 @@ class Card {
                 std::cout << "|  //  |";
         }
     }
-    nlohmann::json toJson() const {
-        // crow::json::wvalue card_json;
-        nlohmann::json card_json;
-        card_json["number"] = number;
-        card_json["suit"] = std::format("{}", suit);
-        card_json["block"] = block;
-        return card_json;
-    }
 };
 
 #define STOI(str_num, integer_num) \
@@ -94,13 +77,8 @@ class Card {
 
 inline void from_json(const nlohmann::json& j, Card& c) {
     std::string rank = j["rank"];
-    std::ofstream logf("client.log");
-    logf << "desering: '" << j << "'\nrank: '" << rank << "'\n";
     int rank_num = 0;
     STOI("A", 14) STOI("K", 13) STOI("Q", 12) STOI("J", 11) { rank_num = std::stoi(rank); }
     c.setNumber(rank_num);
     c.setSuit(j.at("suit").get<std::string>().at(0));
-    if (j.contains("block")) {  // won't ever happen
-        c.setBlock(j.at("block").get<bool>());
-    }
 }
