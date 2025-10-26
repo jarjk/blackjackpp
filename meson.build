@@ -45,7 +45,7 @@ foreach dep : gh_deps
   endif
 endforeach
 
-lib_includes = include_directories('src/lib')
+lib_includes = include_directories('client-src')
 libblackjackpp = declare_dependency(include_directories: lib_includes, dependencies: [dep_map['nlohmann_json'], dep_map['cpptui']])
 
 deps = [libblackjackpp, dep_map['cpp-httplib']]
@@ -58,4 +58,4 @@ cc_args = ['-D_WIN32_WINNT=0x0A00']
 
 # these guys need the dependencies ready
 message('building the client')
-executable('blackjackpp-client', ['src/client/main.cpp'], install: true, dependencies: deps, cpp_args: cc_args)
+executable('blackjackpp-client', ['client-src/main.cpp'], install: true, dependencies: deps, cpp_args: cc_args)
