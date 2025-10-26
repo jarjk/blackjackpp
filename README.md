@@ -2,7 +2,7 @@
 
 > [!NOTE]
 > forked from [ineshbose/Blackjack_CPP](https://github.com/ineshbose/Blackjack_CPP)
->
+
 > [!NOTE]
 > WIP, but we won't really continue developing it.  
 > the idea was to have multiplayer mode via webserver, which is pretty much done  
