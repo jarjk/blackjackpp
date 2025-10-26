@@ -39,6 +39,6 @@ class Player : public Human {
         std::cerr << "resetting player's hand\n";
         Human::clearCards();
         this->stood = false;
-        this->bet = 0;
+        // this->bet = 0;
     }
 };

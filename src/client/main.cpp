@@ -43,10 +43,15 @@ int main() {
 
     tui::init();
 
-    run(cg, cli);
+    try {
+        run(cg, cli);
+    } catch (...) {
+        tui::reset();
+        std::cerr << "\nran into a fatal, unexpected error, sorry...\n";
+        return 1;
+    }
 
     tui::reset();
-    logf.close();
 }
 
 void run(ClientGame& cg, httplib::Client& cli) {
@@ -68,6 +73,17 @@ void run(ClientGame& cg, httplib::Client& cli) {
             case '1':
                 connect(cli, cg);
                 do {
+                    {
+                        auto res = cli.Get(std::format("/join?username={}", cg.game.player.getName()));
+                        if (!res) {
+                            tui::reset();
+                            std::cout << "got no response from server\n";
+                            exit(0);
+                        }
+                        if (res.value().status == 200) {
+                            cg.game.player.clearCards();
+                        }
+                    }
                     tui::cursor::set_position(tui::screen::size().first / 2,
                                               (tui::screen::size().second / 2) - 9);
                     tui::screen::clear_line_right();

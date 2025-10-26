@@ -56,6 +56,9 @@ struct ClientGame {
                     case 'r':
                     case '\n':  // this doesn't work for whatever reason
                     case 13:    // enter
+                        if (this->game.player.getBet() == 0) {
+                            continue;
+                        }
                         return true;
                     default:
                         break;
@@ -70,7 +73,8 @@ struct ClientGame {
         auto gs_json = json::parse(gs.value().body);
         // std::cerr << gs_json << "\n\r";
         // Input::read_ch();
-        this->game.player.setCash(gs_json["games"][this->game.player.getName()]["cash"].get<int>());
+        auto cash = gs_json["games"][this->game.player.getName()]["player"]["wealth"].get<int>();
+        this->game.player.setCash(cash);
 
         if (!this->startBet()) {
             utils::cls();
@@ -91,7 +95,7 @@ struct ClientGame {
 
         auto res_json = json::parse(unwrap_or(res).body);
 
-        this->game.player.setAllCards(res_json["hand"]["cards"].get<std::vector<Card>>());
+        this->game.player.setAllCards(res_json["player"]["hand"]["cards"].get<std::vector<Card>>());
         this->game.dealer.setAllCards(res_json["dealer"]["cards"].get<std::vector<Card>>());
 
         utils::cls();
@@ -138,10 +142,10 @@ struct ClientGame {
             }
             auto res_json = json::parse(unwrap_or(res).body);
 
-            this->game.player.setAllCards(res_json["hand"]["cards"].get<std::vector<Card>>());
+            this->game.player.setAllCards(res_json["player"]["hand"]["cards"].get<std::vector<Card>>());
             this->game.dealer.setAllCards(res_json["dealer"]["cards"].get<std::vector<Card>>());
 
-            if (res_json["winner"].is_null()) {
+            if (res_json["winner"].is_null() || res_json["winner"] == "f") {
                 this->game.printTop();
                 this->game.printBody();
                 continue;
