@@ -1,15 +1,14 @@
-//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>
+//! data types for `BlackJack`
+//!
+//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>\
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
 use crate::libjack::State as JackState;
-use rocket::serde::{Deserialize, Serialize, ser::SerializeStruct};
+use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::fmt;
-
-// TODO: serde
 
 /// Represents the four suits of a card deck.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(crate = "rocket::serde")]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -33,7 +32,6 @@ impl fmt::Display for Suit {
 
 /// Represents the 13 ranks of a card.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(crate = "rocket::serde")]
 pub enum Rank {
     Two,
     Three,
@@ -63,7 +61,7 @@ impl fmt::Display for Rank {
 }
 
 impl Serialize for Rank {
-    fn serialize<S: rocket::serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&self.to_string())
         // let mut rank = serializer.serialize_struct("Rank", 2)?;
         // rank.serialize_field("as_str", &self.to_string())?;
@@ -73,17 +71,17 @@ impl Serialize for Rank {
 }
 
 impl Rank {
-    /// think of it as an id
+    /// think of it as an id, where 2-10 matches the rank, then comes J, Q, K, A
     pub fn as_u8(self) -> u8 {
         self as u8 + 2
     }
-    /// Returns the primary blackjack value for a card rank.
+    /// Returns the primary value for a card rank.\
     /// Ace is initially counted as 11.
     pub fn value_hint(self) -> u8 {
         match self {
             Rank::Jack | Rank::Queen | Rank::King => 10,
             Rank::Ace => 11,
-            num => num as u8 + 2,
+            num => num.as_u8(),
         }
     }
     pub const ALL: [Rank; 13] = [
@@ -105,7 +103,6 @@ impl Rank {
 
 /// A single playing card with a suit and rank.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(crate = "rocket::serde")]
 pub struct Card {
     pub suit: Suit,
     pub rank: Rank,
@@ -126,7 +123,6 @@ impl fmt::Display for Card {
 
 /// Represents a deck of cards, made up from one or more standard decks.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(crate = "rocket::serde")]
 pub struct Deck {
     cards: Vec<Card>,
 }
@@ -137,7 +133,7 @@ impl Deck {
     /// number of initial Decks per Deck
     pub const N_DECKS: usize = 4;
 
-    /// Creates a new Deck from [`N_DECKS`], shuffled, ready to play
+    /// Creates a new Deck from [`Deck::N_DECKS`], shuffled, ready to play
     pub fn init() -> Deck {
         let mut cards = Vec::with_capacity(Deck::N_DECKS * Deck::N_CARDS);
         for _ in 0..Deck::N_DECKS {
@@ -173,7 +169,7 @@ impl Deck {
         self.cards.pop().unwrap() // SAFETY: refilled above if wouldn't be enough
     }
 }
-/// For displaying the Hand in a user-friendly way. (with a padding ' ')
+// For displaying the Hand in a user-friendly way. (with a padding ' ')
 // impl fmt::Debug for Deck {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         for card in &self.cards {
@@ -183,9 +179,8 @@ impl Deck {
 //     }
 // }
 
-// Represents a player.
+/// Represents a player.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(crate = "rocket::serde")]
 pub struct Player {
     hand: Hand,
     pub wealth: u16,
@@ -201,10 +196,10 @@ impl Default for Player {
     }
 }
 impl Player {
+    /// default wealth
     pub const DEF_WEALTH: u16 = 1000;
-    // pub fn new(wealth: u16) -> Self { }
 
-    /// Adds a card to the hand.
+    /// adds a card to the hand
     pub fn add_card(&mut self, card: Card) {
         self.hand.add_card(card);
     }
@@ -214,6 +209,7 @@ impl Player {
         self.bet
     }
 
+    /// substracts the `amount` of bet from `wealth`\
     /// `None` if: already made a bet, making a 0 bet, or not enough wealth.
     pub fn make_bet(&mut self, amount: u16) -> Option<()> {
         if self.bet != 0 || amount == 0 {
@@ -223,12 +219,12 @@ impl Player {
         self.bet = amount;
         Some(())
     }
-    /// Returns the value of the player's cards in hand
+    /// returns the value of the player's cards in hand
     pub fn value(&self) -> u8 {
         self.hand.value()
     }
 
-    /// adds or subtracts `bet` from `wealth` if state is `has_ended`
+    /// adds or subtracts `bet` from `wealth` if state is `has_ended`\
     /// resets `bet` to 0
     pub fn pay_out(&mut self, state: JackState) {
         if !state.has_ended() {
@@ -281,14 +277,13 @@ fn payout() {
     assert!(p.make_bet(BET).is_none()); // no money
 }
 
-// Represents a player's or dealer's hand.
+/// Represents a player's or dealer's hand.
 #[derive(Default, Clone, PartialEq, Eq, Deserialize)]
-#[serde(crate = "rocket::serde")]
 pub struct Hand {
     cards: Vec<Card>,
 }
 impl Serialize for Hand {
-    fn serialize<S: rocket::serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut state = serializer.serialize_struct("Hand", 2)?;
         state.serialize_field("cards", &self.cards)?;
         state.serialize_field("value", &self.value())?;
@@ -302,8 +297,8 @@ impl Hand {
         self.cards.push(card);
     }
 
-    /// Calculates the total value of the hand.
-    /// It correctly handles the flexible value of Aces (1 or 11).
+    /// Calculates the total value of the hand.\
+    /// Correctly handles the flexible value of Aces (1 or 11).
     pub fn value(&self) -> u8 {
         let mut value = 0;
         let mut ace_count = 0;
@@ -336,7 +331,7 @@ impl Hand {
     }
 }
 
-/// For displaying the Hand in a user-friendly way.
+// For displaying the Hand in a user-friendly way.
 impl fmt::Debug for Hand {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}:", self.value())?;
