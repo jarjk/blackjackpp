@@ -4,11 +4,12 @@
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
 use crate::libjack::State as JackState;
+use rocket_okapi::{JsonSchema, okapi::schemars};
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::fmt;
 
 /// Represents the four suits of a card deck.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash, JsonSchema)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -31,7 +32,7 @@ impl fmt::Display for Suit {
 }
 
 /// Represents the 13 ranks of a card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Hash, JsonSchema)]
 pub enum Rank {
     Two,
     Three,
@@ -102,7 +103,7 @@ impl Rank {
 }
 
 /// A single playing card with a suit and rank.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Card {
     pub suit: Suit,
     pub rank: Rank,
@@ -122,7 +123,7 @@ impl fmt::Display for Card {
 }
 
 /// Represents a deck of cards, made up from one or more standard decks.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Deck {
     cards: Vec<Card>,
 }
@@ -268,7 +269,7 @@ mod tests {
 // }
 
 /// Represents a player.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Player {
     hand: Hand,
     pub wealth: u16,
@@ -333,7 +334,7 @@ impl Player {
 }
 
 /// Represents a player's or dealer's hand.
-#[derive(Default, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Default, Clone, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct Hand {
     cards: Vec<Card>,
 }
