@@ -30,9 +30,9 @@ fn index() -> &'static str {
     "BlackJack!"
 }
 
-/// join the game as `username`\
-/// if already joined and finished playing, rejoins\
-/// NOTE: currently each game has it's own dealer\
+/// join the game as `username`  
+/// if already joined and finished playing, rejoins  
+/// NOTE: currently each game has it's own dealer  
 #[openapi]
 #[get("/join?<username>")]
 fn join(username: &str, game_state: &GameState) -> CustomResp<String> {
@@ -53,10 +53,10 @@ fn join(username: &str, game_state: &GameState) -> CustomResp<String> {
     Ok(buf)
 }
 
-/// make a bet of `amount` for `username`\
-/// requires a game waiting for bet of `username`\
-/// `bet` shall be non-zero, but shouldn't exceed user wealth\
-/// deals and so might end the game with a blackjack\
+/// make a bet of `amount` for `username`  
+/// requires a game waiting for bet of `username`  
+/// `bet` shall be non-zero, but shouldn't exceed user wealth  
+/// deals and so might end the game with a blackjack  
 /// returns game state
 #[openapi]
 #[post("/bet/<username>?<amount>")]
@@ -75,9 +75,9 @@ fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<Json<G
     Ok(Json(game.clone())) // PERF: oops
 }
 
-/// make a [`move`](MoveAction) for `username`\
-/// requires a previously made [bet]\
-/// might end the game\
+/// make a [`move`](MoveAction) for `username`  
+/// requires a previously made [bet]  
+/// might end the game  
 /// returns game state
 #[openapi]
 #[post("/move/<username>?<action>")]
