@@ -209,7 +209,7 @@ impl Player {
         self.bet
     }
 
-    /// substracts the `amount` of bet from `wealth`\
+    /// subtracts the `amount` of bet from `wealth`\
     /// `None` if: already made a bet, making a 0 bet, or not enough wealth.
     pub fn make_bet(&mut self, amount: u16) -> Option<()> {
         if self.bet != 0 || amount == 0 {
