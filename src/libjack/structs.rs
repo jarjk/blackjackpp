@@ -1,6 +1,6 @@
 //! data types for `BlackJack`
 //!
-//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>\
+//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>  
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
 use crate::libjack::State as JackState;
@@ -76,7 +76,7 @@ impl Rank {
     pub fn as_u8(self) -> u8 {
         self as u8 + 2
     }
-    /// Returns the primary value for a card rank.\
+    /// Returns the primary value for a card rank.  
     /// Ace is initially counted as 11.
     pub fn value_hint(self) -> u8 {
         match self {
@@ -298,7 +298,7 @@ impl Player {
         self.bet
     }
 
-    /// subtracts the `amount` of bet from `wealth`\
+    /// subtracts the `amount` of bet from `wealth`  
     /// `None` if: already made a bet, making a 0 bet, or not enough wealth.
     pub fn make_bet(&mut self, amount: u16) -> Option<()> {
         if self.bet != 0 || amount == 0 {
@@ -313,7 +313,7 @@ impl Player {
         self.hand.value()
     }
 
-    /// adds or subtracts `bet` from `wealth` if state is `has_ended`\
+    /// adds or subtracts `bet` from `wealth` if state is `has_ended`  
     /// resets `bet` to 0
     pub fn pay_out(&mut self, state: JackState) {
         if !state.has_ended() {
@@ -353,7 +353,7 @@ impl Hand {
         self.cards.push(card);
     }
 
-    /// Calculates the total value of the hand.\
+    /// Calculates the total value of the hand.  
     /// Correctly handles the flexible value of Aces (1 or 11).
     pub fn value(&self) -> u8 {
         let mut value = 0;
