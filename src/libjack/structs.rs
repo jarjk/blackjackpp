@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::fmt;
 
 /// Represents the four suits of a card deck.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -31,7 +31,7 @@ impl fmt::Display for Suit {
 }
 
 /// Represents the 13 ranks of a card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Hash)]
 pub enum Rank {
     Two,
     Three,
@@ -169,6 +169,94 @@ impl Deck {
         self.cards.pop().unwrap() // SAFETY: refilled above if wouldn't be enough
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::libjack::structs::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn deck_init() {
+        let deck = Deck::new();
+        assert_eq!(deck.cards.len(), Deck::N_CARDS);
+        assert_eq!(
+            deck.cards.first(),
+            Some(Card {
+                suit: *Suit::ALL.first().unwrap(),
+                rank: *Rank::ALL.first().unwrap()
+            })
+            .as_ref()
+        );
+        assert_eq!(
+            deck.cards.last(),
+            Some(Card {
+                suit: *Suit::ALL.last().unwrap(),
+                rank: *Rank::ALL.last().unwrap()
+            })
+            .as_ref()
+        );
+        let deck = Deck::init();
+        assert_eq!(deck.cards.len(), Deck::N_CARDS * Deck::N_DECKS);
+
+        let mut suit_counts = Suit::ALL.iter().map(|s| (*s, 0)).collect::<HashMap<_, _>>();
+        let suit_counts_exp = Suit::ALL
+            .iter()
+            .map(|s| (*s, Rank::ALL.len() * Deck::N_DECKS))
+            .collect::<HashMap<_, _>>();
+
+        let mut rank_counts = Rank::ALL.iter().map(|r| (*r, 0)).collect::<HashMap<_, _>>();
+        let rank_counts_exp = Rank::ALL
+            .iter()
+            .map(|r| (*r, Suit::ALL.len() * Deck::N_DECKS))
+            .collect::<HashMap<_, _>>();
+
+        deck.cards.iter().for_each(|Card { suit, rank }| {
+            suit_counts.entry(*suit).and_modify(|n| {
+                *n += 1;
+            });
+            rank_counts.entry(*rank).and_modify(|n| {
+                *n += 1;
+            });
+        });
+        assert_eq!(suit_counts, suit_counts_exp);
+        assert_eq!(rank_counts, rank_counts_exp);
+        assert_eq!(0, 0);
+    }
+
+    #[test]
+    fn payout() {
+        let mut p = Player::default();
+        const BET: u16 = 100;
+        p.make_bet(BET).unwrap(); // -1bet
+        assert_eq!(p.bet, BET);
+        assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
+        p.pay_out(JackState::PlayerJack); // + 3bet
+        assert_eq!(p.wealth, Player::DEF_WEALTH + 2 * BET);
+        p.make_bet(BET).unwrap(); // -1bet
+        p.pay_out(JackState::DealerJack);
+        assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
+        p.make_bet(BET).unwrap(); // -1bet
+        p.pay_out(JackState::DealerWin);
+        assert_eq!(p.wealth, Player::DEF_WEALTH);
+        p.make_bet(BET).unwrap(); // -1bet
+        p.pay_out(JackState::DealerBust); // +2bet
+        assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
+        p.make_bet(BET).unwrap(); // -1bet
+        p.pay_out(JackState::PlayerBust);
+        p.make_bet(BET).unwrap(); // -1bet
+        p.pay_out(JackState::DealerJack);
+        p.make_bet(BET).unwrap(); // -1bet
+        assert!(p.make_bet(BET).is_none()); // don't bet twice
+        p.pay_out(JackState::Push); // +1bet
+        assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
+        for _ in 0..9 {
+            p.make_bet(BET).unwrap(); // -1bet
+            p.pay_out(JackState::DealerWin);
+        }
+        assert_eq!(p.wealth, 0);
+        assert!(p.make_bet(BET).is_none()); // no money
+    }
+}
 // For displaying the Hand in a user-friendly way. (with a padding ' ')
 // impl fmt::Debug for Deck {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -242,39 +330,6 @@ impl Player {
         self.bet = 0;
         // JackState::WaitingBet
     }
-}
-#[test]
-fn payout() {
-    let mut p = Player::default();
-    const BET: u16 = 100;
-    p.make_bet(BET).unwrap(); // -1bet
-    assert_eq!(p.bet, BET);
-    assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
-    p.pay_out(JackState::PlayerJack); // + 3bet
-    assert_eq!(p.wealth, Player::DEF_WEALTH + 2 * BET);
-    p.make_bet(BET).unwrap(); // -1bet
-    p.pay_out(JackState::DealerJack);
-    assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
-    p.make_bet(BET).unwrap(); // -1bet
-    p.pay_out(JackState::DealerWin);
-    assert_eq!(p.wealth, Player::DEF_WEALTH);
-    p.make_bet(BET).unwrap(); // -1bet
-    p.pay_out(JackState::DealerBust); // +2bet
-    assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
-    p.make_bet(BET).unwrap(); // -1bet
-    p.pay_out(JackState::PlayerBust);
-    p.make_bet(BET).unwrap(); // -1bet
-    p.pay_out(JackState::DealerJack);
-    p.make_bet(BET).unwrap(); // -1bet
-    assert!(p.make_bet(BET).is_none()); // don't bet twice
-    p.pay_out(JackState::Push); // +1bet
-    assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
-    for _ in 0..9 {
-        p.make_bet(BET).unwrap(); // -1bet
-        p.pay_out(JackState::DealerWin);
-    }
-    assert_eq!(p.wealth, 0);
-    assert!(p.make_bet(BET).is_none()); // no money
 }
 
 /// Represents a player's or dealer's hand.
