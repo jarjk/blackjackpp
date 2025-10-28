@@ -7,7 +7,7 @@ use rocket::{State, get, http::Status, post};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::sync::{Arc, Mutex, atomic};
+use std::sync::{Arc, Mutex};
 
 mod libjack;
 
@@ -107,10 +107,8 @@ fn game_state_of(username: &str, state: &GameState) -> Option<Json<BlackJack>> {
 
 /// get the state of all the games
 #[get("/game_state")]
-fn game_state(visitor_count: &State<atomic::AtomicUsize>, state: &GameState) -> Json<BlackJack> {
-    let count = visitor_count.fetch_add(1, atomic::Ordering::Relaxed) + 1;
+fn game_state(state: &GameState) -> Json<BlackJack> {
     let state = &state.lock().unwrap();
-    eprintln!("{count}: anotheone!\n{state}");
     Json((*state).clone()) // PERF: shit!
 }
 
@@ -138,7 +136,6 @@ fn rocket() -> _ {
 
     rocket::build() // see Rocket.toml
         .manage(Arc::new(Mutex::new(blackjack)))
-        .manage(atomic::AtomicUsize::new(0))
         .mount(
             "/",
             rocket::routes![index, join, bet, make_move, game_state, game_state_of],
