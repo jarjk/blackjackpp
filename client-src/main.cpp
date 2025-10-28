@@ -21,31 +21,38 @@ void run(ClientGame& cg, httplib::Client& cli);
 static inline void connect(httplib::Client& cli, ClientGame& cg);
 
 int main() {
-    const char* server_addr = std::getenv("BJ_ADDR");
-    if (server_addr == nullptr) {
-        std::cerr << "env var 'BJ_ADDR' is not set to the server's ip address, defaulting to 'localhost'";
-        server_addr = "localhost";
+    const char* default_addr = "localhost:18080";
+    const char* raw_server_addr = std::getenv("BJ_ADDR");
+    if (raw_server_addr == nullptr) {
+        std::cerr << "env var 'BJ_ADDR' is not set to the server's address '<host>:<port>', defaulting to '"
+                  << default_addr << "'\n";
+        raw_server_addr = default_addr;
+    }
+    std::string server_addr = raw_server_addr;
+    if (server_addr.find(':') == std::string::npos) {
+        std::cerr << "valid syntax: 'BJ_ADDR=<host>:<port>'\n";
+        return 1;
     }
 
-    httplib::Client cli(server_addr, 18080);
-
-    std::ofstream logf(".blackjacpp-client.log", std::ios::app);
-    cli.set_logger([&logf](const httplib::Request& req, const httplib::Response& res) {
-        logf << utils::now_s() << " ✓ " << req.method << " " << req.path << " -> " << res.status << " ("
-             << res.body.size() << " bytes" << ")" << '\n';
-    });
-
-    cli.set_error_logger([&logf](const httplib::Error& err, const httplib::Request* req) {
-        logf << utils::now_s() << " ✗ " << req->method << " " << req->path
-             << " failed: " << httplib::to_string(err) << '\n';
-    });
-    cli.set_keep_alive(true);
-
-    ClientGame cg;
-
-    tui::init();
+    httplib::Client cli(server_addr);
 
     try {
+        std::ofstream logf(".blackjacpp-client.log", std::ios::app);
+        cli.set_logger([&logf](const httplib::Request& req, const httplib::Response& res) {
+            logf << utils::now_s() << " ✓ " << req.method << " " << req.path << " -> " << res.status << " ("
+                 << res.body.size() << " bytes" << ")" << '\n';
+        });
+
+        cli.set_error_logger([&logf](const httplib::Error& err, const httplib::Request* req) {
+            logf << utils::now_s() << " ✗ " << req->method << " " << req->path
+                 << " failed: " << httplib::to_string(err) << '\n';
+        });
+        cli.set_keep_alive(true);
+
+        ClientGame cg;
+
+        tui::init();
+
         run(cg, cli);
     } catch (const std::exception& e) {
         tui::reset();

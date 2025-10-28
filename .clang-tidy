@@ -1,5 +1,4 @@
 Checks:
-  abseil-*,
   altera-*,
   android-*,
   bugprone-*,
@@ -22,6 +21,7 @@ Checks:
   portability-*,
   readability-*,
   zircon-*,
+  -abseil-*,
   -boost-*,
   -llvmlibc-*,
   -altera-unroll-loops,
