@@ -79,7 +79,7 @@ void run(ClientGame& cg, httplib::Client& cli) {
                 do {
                     {
                         // not joining actually, just rejoining, so playing again
-                        auto res = cli.Get(std::format("/join?username={}", cg.game.player.getName()));
+                        auto res = cli.Get(tui::concat("/join?username=", cg.game.player.getName()));
                         if (!res) {
                             throw std::runtime_error("got no response from server");
                         }
@@ -133,7 +133,7 @@ void connect(httplib::Client& cli, ClientGame& cg) {
         tui::cursor::visible(false);
         tui::enable_raw_mode();
 
-        auto res = cli.Get(std::format("/join?username={}", username));
+        auto res = cli.Get(tui::concat("/join?username=", username));
 
         if (!res) {
             throw std::runtime_error("got no response from server");
