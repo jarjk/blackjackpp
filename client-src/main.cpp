@@ -21,7 +21,7 @@ void run(ClientGame& cg, httplib::Client& cli);
 static inline void connect(httplib::Client& cli, ClientGame& cg);
 
 int main() {
-    const char* default_addr = "localhost:18080";
+    const char* default_addr = "localhost:5225";
     const char* raw_server_addr = std::getenv("BJ_ADDR");
     if (raw_server_addr == nullptr) {
         std::cerr << "env var 'BJ_ADDR' is not set to the server's address '<host>:<port>', defaulting to '"
