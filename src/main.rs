@@ -1,9 +1,11 @@
 //! a server for playing `BlackJack`
 
 use libjack::{Game, MoveAction};
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::http::Header;
 use rocket::response::status::Custom as CustomStatus;
 use rocket::serde::json::Json;
-use rocket::{State, get, http::Status, post};
+use rocket::{Request, Response, State, get, http::Status, post};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -14,6 +16,31 @@ mod libjack;
 type CustomResp<T> = Result<T, CustomStatus<String>>;
 type GameState = State<Arc<Mutex<BlackJack>>>;
 type Games = HashMap<String, Game>;
+
+// Source - https://stackoverflow.com/questions/62412361/how-to-set-up-cors-or-options-for-rocket-rs
+// Posted by Ibraheem Ahmed, modified by community. See post 'Timeline' for change history
+// Retrieved 2025-11-13, License - CC BY-SA 4.0
+pub struct CORS;
+
+#[rocket::async_trait]
+impl Fairing for CORS {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add CORS headers to responses",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, GET, PATCH, OPTIONS",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
+}
 
 /// http response with `status` code and `msg`
 fn custom_err<T>(status: Status, msg: &str) -> CustomResp<T> {
@@ -135,6 +162,7 @@ fn rocket() -> _ {
     };
 
     rocket::build() // see Rocket.toml
+        .attach(CORS)
         .manage(Arc::new(Mutex::new(blackjack)))
         .mount(
             "/",
