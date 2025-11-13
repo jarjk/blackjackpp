@@ -1,14 +1,15 @@
 //! data types for `BlackJack`
 //!
-//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>\
+//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>  
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
 use crate::libjack::State as JackState;
+use rocket_okapi::{JsonSchema, okapi::schemars};
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::fmt;
 
 /// Represents the four suits of a card deck.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash, JsonSchema)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -31,7 +32,7 @@ impl fmt::Display for Suit {
 }
 
 /// Represents the 13 ranks of a card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Hash, JsonSchema)]
 pub enum Rank {
     Two,
     Three,
@@ -75,7 +76,7 @@ impl Rank {
     pub fn as_u8(self) -> u8 {
         self as u8 + 2
     }
-    /// Returns the primary value for a card rank.\
+    /// Returns the primary value for a card rank.  
     /// Ace is initially counted as 11.
     pub fn value_hint(self) -> u8 {
         match self {
@@ -102,7 +103,7 @@ impl Rank {
 }
 
 /// A single playing card with a suit and rank.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Card {
     pub suit: Suit,
     pub rank: Rank,
@@ -122,7 +123,7 @@ impl fmt::Display for Card {
 }
 
 /// Represents a deck of cards, made up from one or more standard decks.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Deck {
     cards: Vec<Card>,
 }
@@ -268,7 +269,7 @@ mod tests {
 // }
 
 /// Represents a player.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub struct Player {
     hand: Hand,
     pub wealth: u16,
@@ -297,7 +298,7 @@ impl Player {
         self.bet
     }
 
-    /// subtracts the `amount` of bet from `wealth`\
+    /// subtracts the `amount` of bet from `wealth`  
     /// `None` if: already made a bet, making a 0 bet, or not enough wealth.
     pub fn make_bet(&mut self, amount: u16) -> Option<()> {
         if self.bet != 0 || amount == 0 {
@@ -312,7 +313,7 @@ impl Player {
         self.hand.value()
     }
 
-    /// adds or subtracts `bet` from `wealth` if state is `has_ended`\
+    /// adds or subtracts `bet` from `wealth` if state is `has_ended`  
     /// resets `bet` to 0
     pub fn pay_out(&mut self, state: JackState) {
         if !state.has_ended() {
@@ -333,7 +334,7 @@ impl Player {
 }
 
 /// Represents a player's or dealer's hand.
-#[derive(Default, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Default, Clone, PartialEq, Eq, Deserialize, JsonSchema)]
 pub struct Hand {
     cards: Vec<Card>,
 }
@@ -352,7 +353,7 @@ impl Hand {
         self.cards.push(card);
     }
 
-    /// Calculates the total value of the hand.\
+    /// Calculates the total value of the hand.  
     /// Correctly handles the flexible value of Aces (1 or 11).
     pub fn value(&self) -> u8 {
         let mut value = 0;

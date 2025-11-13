@@ -8,13 +8,14 @@
 //! - <https://serde.rs/impl-serialize.html>
 //! - <https://bewersdorff-online.de/black-jack/>
 
+use rocket_okapi::{JsonSchema, okapi::schemars};
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::cmp::Ordering;
 
 mod structs;
 
 /// a game between one player and one dealer
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, JsonSchema)]
 pub struct Game {
     // TODO: statistics?
     deck: structs::Deck,
@@ -35,9 +36,9 @@ impl Serialize for Game {
     }
 }
 impl Game {
-    /// deals cards\
-    /// called once a bet is made\
-    /// hole card check (USA)\
+    /// deals cards  
+    /// called once a bet is made  
+    /// hole card check (USA)  
     /// requires already set `deck`, call [`Game::default()`] before first use
     pub fn init(&mut self) {
         self.dealer.add_card(self.deck.deal_card());
@@ -54,7 +55,7 @@ impl Game {
             State::Ongoing
         };
     }
-    /// deals the dealer cards, till 17 is reached\
+    /// deals the dealer cards, till 17 is reached  
     /// S17: stands on soft 17
     pub fn deal_dealer(&mut self) {
         while self.dealer.value() < 17 {
@@ -65,7 +66,7 @@ impl Game {
     pub fn deal_player(&mut self) {
         self.player.add_card(self.deck.deal_card());
     }
-    /// reset deck, hands, but remember player wealth\
+    /// reset deck, hands, but remember player wealth  
     /// NOTE: doesn't check if previous game has ended
     pub fn play_again(&mut self) {
         let player_wealth = self.player.wealth;
@@ -76,7 +77,7 @@ impl Game {
     pub fn current_state(&self) -> State {
         self.state
     }
-    /// calculates state according to current dealer and player values and previous action\
+    /// calculates state according to current dealer and player values and previous action  
     /// NOTE: `BlackJack` is handled in [`Self::init`]
     fn new_state(&self, prev_action: MoveAction) -> State {
         let p_value = self.player.value();
@@ -99,7 +100,7 @@ impl Game {
             Ordering::Greater => State::PlayerWin,
         }
     }
-    /// updates state according to player, dealer values and `action`\
+    /// updates state according to player, dealer values and `action`  
     /// also handles paying out bet
     pub fn update_state(&mut self, action: MoveAction) {
         self.state = self.new_state(action);
@@ -130,16 +131,18 @@ impl std::fmt::Display for Game {
 }
 
 /// what a user can do during their turn
-#[derive(Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Deserialize, Serialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Deserialize, Serialize, JsonSchema,
+)]
 pub enum MoveAction {
     // TODO: double-down, surrender, insurance, splitting?
     Hit,
     Stand,
 }
 
-/// state of one game\
+/// state of one game  
 /// waiting for bet, ongoing, winner
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
 pub enum State {
     WaitingBet,
     Ongoing,
