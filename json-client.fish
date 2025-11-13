@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 if test "$argv[1]" = ""
-    set addr "http://localhost:18080"
+    set addr "http://localhost:5225"
 else
     set addr "$argv[1]"
 end
