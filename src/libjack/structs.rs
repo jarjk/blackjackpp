@@ -5,11 +5,12 @@
 
 use crate::libjack::State as JackState;
 use rocket_okapi::{JsonSchema, okapi::schemars};
-use serde::{Deserialize, Serialize, ser::SerializeStruct};
+use serde::{Serialize, ser::SerializeStruct};
 use std::fmt;
 
 /// Represents the four suits of a card deck.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash, JsonSchema)]
+// TODO: manual `Serialize` impl might be better
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Hash, JsonSchema)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -32,7 +33,7 @@ impl fmt::Display for Suit {
 }
 
 /// Represents the 13 ranks of a card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Hash, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, JsonSchema)]
 pub enum Rank {
     Two,
     Three,
@@ -103,7 +104,7 @@ impl Rank {
 }
 
 /// A single playing card with a suit and rank.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Card {
     pub suit: Suit,
     pub rank: Rank,
@@ -123,7 +124,7 @@ impl fmt::Display for Card {
 }
 
 /// Represents a deck of cards, made up from one or more standard decks.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Deck {
     cards: Vec<Card>,
 }
@@ -161,7 +162,8 @@ impl Deck {
         fastrand::shuffle(&mut self.cards);
     }
 
-    /// Deals one card from the top of the deck.
+    /// Deals one card from the top of the deck.  
+    /// Refills the whole Deck if half of it is gone.
     #[must_use]
     pub fn deal_card(&mut self) -> Card {
         if self.cards.len() < Deck::N_DECKS / 2 * Deck::N_CARDS {
@@ -269,7 +271,7 @@ mod tests {
 // }
 
 /// Represents a player.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Player {
     hand: Hand,
     pub wealth: u16,
@@ -319,13 +321,13 @@ impl Player {
         if !state.has_ended() {
             return;
         }
-        assert_ne!(self.bet, 0);
+        assert_ne!(self.bet, 0); // TODO: isn't it a bit overkill?
         let multip = match state {
             JackState::PlayerJack => 3, // (+orig_bet + 2*bet) yep, we're generous
             JackState::PlayerWin | JackState::DealerBust => 2, // +orig_bet+bet
             JackState::Push => 1,       // +orig_bet
             JackState::DealerJack | JackState::PlayerBust | JackState::DealerWin => 0, // -orig_bet
-            _ => unreachable!("has ended"),
+            _ => unreachable!("it has already ended"),
         };
         self.wealth += self.bet * multip;
         self.bet = 0;
@@ -334,7 +336,7 @@ impl Player {
 }
 
 /// Represents a player's or dealer's hand.
-#[derive(Default, Clone, PartialEq, Eq, Deserialize, JsonSchema)]
+#[derive(Default, Clone, PartialEq, Eq, JsonSchema)]
 pub struct Hand {
     cards: Vec<Card>,
 }

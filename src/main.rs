@@ -9,7 +9,6 @@ use rocket::{Request, Response, State, get, http::Status, post, response::Redire
 use rocket_okapi::okapi::schemars;
 use rocket_okapi::okapi::schemars::JsonSchema;
 use rocket_okapi::{openapi, openapi_get_routes};
-use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -17,7 +16,6 @@ mod libjack;
 
 type CustomResp<T> = Result<T, CustomStatus<String>>;
 type GameState = State<Arc<Mutex<BlackJack>>>;
-type Games = HashMap<String, Game>;
 
 // Source - https://stackoverflow.com/questions/62412361/how-to-set-up-cors-or-options-for-rocket-rs
 // Posted by Ibraheem Ahmed, modified by community. See post 'Timeline' for change history
@@ -64,9 +62,9 @@ fn index() -> Redirect {
 fn join(username: &str, game_state: &GameState) -> CustomResp<Json<&'static str>> {
     let games = &mut game_state.lock().unwrap().games;
     let resp;
-    if let Some(locked_game) = games.get_mut(username) {
-        if locked_game.current_state().has_ended() {
-            locked_game.play_again();
+    if let Some(game) = games.get_mut(username) {
+        if game.current_state().has_ended() {
+            game.play_again();
             resp = "new game";
         } else {
             return custom_err(Status::Forbidden, "shouldn't join twice");
@@ -98,7 +96,7 @@ fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<Json<G
     }
     game.init();
     game.player.pay_out(game.current_state()); // if it's ended with a BJ, handle payouts
-    Ok(Json(game.clone())) // PERF: oops
+    Ok(Json(game.clone())) // PERF: oops, TODO: shouldn't use `game_state_of` instead?
 }
 
 /// make a [`move`](MoveAction) for `username`  
@@ -122,24 +120,23 @@ fn make_move(username: &str, action: MoveAction, game_state: &GameState) -> Cust
         MoveAction::Stand => game.deal_dealer(),
     }
     game.update_state(action); // maybe it's ended
-    Ok(Json(game.clone())) // PERF: oops
+    Ok(Json(game.clone())) // PERF: oops, TODO: shouldn't use `game_state_of` instead?
 }
 
 /// get the game state of a specific `username`
 #[openapi]
 #[get("/game_state/<username>")]
-fn game_state_of(username: &str, state: &GameState) -> Option<Json<BlackJack>> {
-    let state = &state.lock().unwrap();
-    if username.is_empty() || !state.games.contains_key(username) {
+fn game_state_of(username: &str, game_state: &GameState) -> Option<Json<Game>> {
+    let games = &game_state.lock().unwrap().games;
+    if username.is_empty() || !games.contains_key(username) {
         None
     } else {
-        Some(Json(BlackJack {
-            games: HashMap::from([(username.to_string(), state.games[username].clone())]),
-        }))
+        Some(Json(games[username].clone())) // PERF: don't worry
     }
 }
 
 /// get the state of all the games
+// TODO: #[deprecated = "too much data, use `game_state_of` instead"] // might need a `list_users` endpoint
 #[openapi]
 #[get("/game_state")]
 fn game_state(state: &GameState) -> Json<BlackJack> {
@@ -147,11 +144,11 @@ fn game_state(state: &GameState) -> Json<BlackJack> {
     Json((*state).clone()) // PERF: shit!
 }
 
-/// a blackjack table, with one dealer for each player
-#[derive(Debug, Default, Clone, Serialize, JsonSchema)]
+/// a blackjack table, with a separate dealer for each player
+#[derive(Debug, Default, Clone, serde::Serialize, JsonSchema)]
 struct BlackJack {
-    // TODO: one dealer and deck for all players|clients
-    games: Games,
+    // TODO: one dealer and deck for all players|clients at the same table
+    games: HashMap<String, Game>,
 }
 impl std::fmt::Display for BlackJack {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -164,10 +161,7 @@ impl std::fmt::Display for BlackJack {
 
 #[rocket::launch]
 fn rocket() -> _ {
-    // TODO: custom logging?
-    let blackjack = BlackJack {
-        games: HashMap::new(),
-    };
+    let blackjack = BlackJack::default();
 
     rocket::build() // see Rocket.toml
         .attach(CORS)
@@ -176,5 +170,4 @@ fn rocket() -> _ {
             "/",
             openapi_get_routes![index, join, bet, make_move, game_state, game_state_of],
         )
-        .mount("/help", rocket::routes![index])
 }

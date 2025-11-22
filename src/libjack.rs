@@ -9,7 +9,7 @@
 //! - <https://bewersdorff-online.de/black-jack/>
 
 use rocket_okapi::{JsonSchema, okapi::schemars};
-use serde::{Deserialize, Serialize, ser::SerializeStruct};
+use serde::{Serialize, ser::SerializeStruct};
 use std::cmp::Ordering;
 
 mod structs;
@@ -17,7 +17,7 @@ mod structs;
 /// a game between one player and one dealer
 #[derive(Debug, Clone, PartialEq, Eq, JsonSchema)]
 pub struct Game {
-    // TODO: statistics?
+    // TODO: statistics (wins, loses, jacks, ...)?
     deck: structs::Deck,
     dealer: structs::Hand,
     pub player: structs::Player,
@@ -42,9 +42,9 @@ impl Game {
     /// requires already set `deck`, call [`Game::default()`] before first use
     pub fn init(&mut self) {
         self.dealer.add_card(self.deck.deal_card());
-        self.player.add_card(self.deck.deal_card());
+        self.deal_player();
         self.dealer.add_card(self.deck.deal_card());
-        self.player.add_card(self.deck.deal_card());
+        self.deal_player();
         self.state = if self.player.value() == 21 && self.dealer.value() == 21 {
             State::Push
         } else if self.player.value() == 21 {
@@ -131,9 +131,7 @@ impl std::fmt::Display for Game {
 }
 
 /// what a user can do during their turn
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Deserialize, Serialize, JsonSchema,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Serialize, JsonSchema)]
 pub enum MoveAction {
     // TODO: double-down, surrender, insurance, splitting?
     Hit,
@@ -142,7 +140,7 @@ pub enum MoveAction {
 
 /// state of one game  
 /// waiting for bet, ongoing, winner
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 pub enum State {
     WaitingBet,
     Ongoing,
