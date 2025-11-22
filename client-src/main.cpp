@@ -1,3 +1,5 @@
+#include <exception>
+#include <stdexcept>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -14,39 +16,53 @@
 #include "print.hpp"
 #include "utils.hpp"
 
-void help(httplib::Client& cli);
+void help();
 void run(ClientGame& cg, httplib::Client& cli);
 static inline void connect(httplib::Client& cli, ClientGame& cg);
 
 int main() {
-    const char* server_addr = std::getenv("BJ_ADDR");
-    if (server_addr == nullptr) {
-        std::cerr << "env var 'BJ_ADDR' is not set to the server's ip address, defaulting to 'localhost'";
-        server_addr = "localhost";
+    const char* default_addr = "localhost:5225";
+    const char* raw_server_addr = std::getenv("BJ_ADDR");
+    if (raw_server_addr == nullptr) {
+        std::cerr << "env var 'BJ_ADDR' is not set to the server's address '<host>:<port>', defaulting to '"
+                  << default_addr << "'\n";
+        raw_server_addr = default_addr;
+    }
+    std::string server_addr = raw_server_addr;
+    if (server_addr.find(':') == std::string::npos) {
+        std::cerr << "valid syntax: 'BJ_ADDR=<host>:<port>'\n";
+        return 1;
     }
 
-    httplib::Client cli(server_addr, 18080);
+    httplib::Client cli(server_addr);
 
-    std::ofstream logf(".blackjacpp-client.log", std::ios::app);
-    cli.set_logger([&logf](const httplib::Request& req, const httplib::Response& res) {
-        logf << utils::now_s() << " ✓ " << req.method << " " << req.path << " -> " << res.status << " ("
-             << res.body.size() << " bytes" << ")" << '\n';
-    });
+    try {
+        std::ofstream logf(".blackjacpp-client.log", std::ios::app);
+        cli.set_logger([&logf](const httplib::Request& req, const httplib::Response& res) {
+            logf << utils::now_s() << " ✓ " << req.method << " " << req.path << " -> " << res.status << " ("
+                 << res.body.size() << " bytes" << ")" << '\n';
+        });
 
-    cli.set_error_logger([&logf](const httplib::Error& err, const httplib::Request* req) {
-        logf << utils::now_s() << " ✗ " << req->method << " " << req->path
-             << " failed: " << httplib::to_string(err) << '\n';
-    });
-    cli.set_keep_alive(true);
+        cli.set_error_logger([&logf](const httplib::Error& err, const httplib::Request* req) {
+            logf << utils::now_s() << " ✗ " << req->method << " " << req->path
+                 << " failed: " << httplib::to_string(err) << '\n';
+        });
+        cli.set_keep_alive(true);
 
-    ClientGame cg;
+        ClientGame cg;
 
-    tui::init();
+        tui::init();
 
-    run(cg, cli);
+        run(cg, cli);
+    } catch (const std::exception& e) {
+        tui::reset();
+        std::cerr << "\nsorry, the app ran into a fatal, unexpected error.\nall we know about it is this: '"
+                  << e.what() << "'\n";
+        cli.stop();
+        return 1;
+    }
 
     tui::reset();
-    logf.close();
 }
 
 void run(ClientGame& cg, httplib::Client& cli) {
@@ -68,6 +84,16 @@ void run(ClientGame& cg, httplib::Client& cli) {
             case '1':
                 connect(cli, cg);
                 do {
+                    {
+                        // not joining actually, just rejoining, so playing again
+                        auto res = cli.Get(tui::concat("/join?username=", cg.game.player.getName()));
+                        if (!res) {
+                            throw std::runtime_error("got no response from server");
+                        }
+                        if (res.value().status == 200) {
+                            cg.game.player.clearCards();
+                        }
+                    }
                     tui::cursor::set_position(tui::screen::size().first / 2,
                                               (tui::screen::size().second / 2) - 9);
                     tui::screen::clear_line_right();
@@ -79,7 +105,7 @@ void run(ClientGame& cg, httplib::Client& cli) {
                 } while (std::tolower(c) != 'n' && c != SpecKey::CtrlC);
                 break;
             case '2':
-                help(cli);
+                help();
                 Input::read_ch();
                 break;
             case 'q':
@@ -90,12 +116,10 @@ void run(ClientGame& cg, httplib::Client& cli) {
     } while (c != 'q');
 }
 
-void help(httplib::Client& cli) {
-    auto res = unwrap_or(cli.Get("/help"));
-
+void help() {
     tui::screen::clear();
     tui::cursor::home();
-    std::cout << tui::string(utils::raw_mode_converter(res.body)).green();
+    std::cout << tui::string(utils::raw_mode_converter(Print::instructions())).green();
 }
 
 void connect(httplib::Client& cli, ClientGame& cg) {
@@ -116,12 +140,10 @@ void connect(httplib::Client& cli, ClientGame& cg) {
         tui::cursor::visible(false);
         tui::enable_raw_mode();
 
-        auto res = cli.Get(std::format("/join?username={}", username));
+        auto res = cli.Get(tui::concat("/join?username=", username));
 
         if (!res) {
-            tui::reset();
-            std::cout << "got no response from server\n";
-            exit(0);
+            throw std::runtime_error("got no response from server");
         }
 
         if (res.value().status == 200) {
