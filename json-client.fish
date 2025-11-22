@@ -28,4 +28,4 @@ POST "bet/$uname?amount=100"
 
 read -P 'action: ' action
 POST "move/$uname?action=$action"
-GET game_state
+GET game_state/$uname

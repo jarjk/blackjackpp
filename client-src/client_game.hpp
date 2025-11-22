@@ -75,12 +75,11 @@ struct ClientGame {
         return false;
     }
     void kinda_beginGame(httplib::Client& cli) {
-        auto gs = cli.Get(tui::concat("/game_state"));
+        auto gs = cli.Get(tui::concat("/game_state/", this->game.player.getName()));
         auto gs_json = json::parse(gs.value().body);
         // std::cerr << gs_json << "\n\r";
         // Input::read_ch();
-        this->game.player.setCash(
-            gs_json["games"][this->game.player.getName()]["player"]["wealth"].get<int>());
+        this->game.player.setCash(gs_json["player"]["wealth"].get<int>());
         auto prev_bet = this->game.player.getBet();
         this->game.player.setBet(0);
         this->game.player.makeBet(prev_bet);
