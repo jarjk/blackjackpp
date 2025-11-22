@@ -8,7 +8,6 @@ use rocket::serde::json::Json;
 use rocket::{Request, Response, State, get, http::Status, post, response::Redirect};
 use serde::Serialize;
 use std::collections::HashMap;
-use std::fmt::Write;
 use std::sync::{Arc, Mutex};
 
 mod libjack;
@@ -57,22 +56,22 @@ fn index() -> Redirect {
 /// if already joined and finished playing, rejoins\
 /// NOTE: currently each game has it's own dealer\
 #[get("/join?<username>")]
-fn join(username: &str, game_state: &GameState) -> CustomResp<String> {
+fn join(username: &str, game_state: &GameState) -> CustomResp<Json<&'static str>> {
     let games = &mut game_state.lock().unwrap().games;
-    let mut buf = String::new();
+    let resp;
     if let Some(locked_game) = games.get_mut(username) {
         if locked_game.current_state().has_ended() {
             locked_game.play_again();
-            _ = writeln!(buf, "{username:?} is up for a new game...");
+            resp = "new game";
         } else {
             return custom_err(Status::Forbidden, "shouldn't join twice");
         }
-    } else if !games.contains_key(username) {
+    } else {
         games.insert(username.to_string(), Game::default());
-        _ = writeln!(buf, "{username:?} is entering the chat...");
+        resp = "first game";
     }
-    _ = write!(buf, "everyone now: {:?}", games.keys());
-    Ok(buf)
+    // _ = write!(buf, "all the players now: {:?}", games.keys());
+    Ok(Json(resp))
 }
 
 /// make a bet of `amount` for `username`\
