@@ -5,7 +5,7 @@ use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::response::status::Custom as CustomStatus;
 use rocket::serde::json::Json;
-use rocket::{Request, Response, State, get, http::Status, post};
+use rocket::{Request, Response, State, get, http::Status, post, response::Redirect};
 use rocket_okapi::okapi::schemars;
 use rocket_okapi::okapi::schemars::JsonSchema;
 use rocket_okapi::{openapi, openapi_get_routes};
@@ -50,11 +50,11 @@ fn custom_err<T>(status: Status, msg: &str) -> CustomResp<T> {
     Err(CustomStatus(status, msg.to_string()))
 }
 
-/// index, displays minimal server info
+/// index, redirect to git repo
 #[openapi]
 #[get("/")]
-fn index() -> &'static str {
-    "BlackJack!"
+fn index() -> Redirect {
+    Redirect::to("https://github.com/jarjk/blackjackpp")
 }
 
 /// join the game as `username`  
