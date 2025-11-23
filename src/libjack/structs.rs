@@ -307,14 +307,14 @@ impl Player {
         if !state.has_ended() {
             return;
         }
-        let multip = match state {
-            JackState::PlayerJack => 3, // (+orig_bet + 2*bet) yep, we're generous
-            JackState::PlayerWin | JackState::DealerBust => 2, // +orig_bet+bet
-            JackState::Push => 1,       // +orig_bet
-            JackState::DealerJack | JackState::PlayerBust | JackState::DealerWin => 0, // -orig_bet
+        let (mult, div) = match state {
+            JackState::PlayerJack => (3, 2), // (+orig_bet + 3/2*bet) yep, we're generous
+            JackState::PlayerWin | JackState::DealerBust => (2, 1), // +orig_bet+bet
+            JackState::Push => (1, 1),       // +orig_bet
+            JackState::DealerJack | JackState::PlayerBust | JackState::DealerWin => (0, 1), // -orig_bet
             _ => unreachable!("it has already ended"),
         };
-        self.wealth += self.bet * multip;
+        self.wealth += self.bet * mult / div;
         self.bet = 0;
         // JackState::WaitingBet
     }
@@ -379,18 +379,23 @@ mod tests {
         const BET: u16 = 100;
         p.make_bet(BET).unwrap(); // -1bet
         assert_eq!(p.bet, BET);
-        assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
-        p.pay_out(JackState::PlayerJack); // + 3bet
-        assert_eq!(p.wealth, Player::DEF_WEALTH + 2 * BET);
+        let exp = Player::DEF_WEALTH - BET;
+        assert_eq!(p.wealth, exp);
+        p.pay_out(JackState::PlayerJack); // + 2.5bet
+        let exp = exp + BET * 3 / 2;
+        assert_eq!(p.wealth, exp);
         p.make_bet(BET).unwrap(); // -1bet
         p.pay_out(JackState::DealerJack);
-        assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
+        let exp = exp - BET;
+        assert_eq!(p.wealth, exp);
         p.make_bet(BET).unwrap(); // -1bet
         p.pay_out(JackState::DealerWin);
-        assert_eq!(p.wealth, Player::DEF_WEALTH);
+        let exp = exp - BET;
+        assert_eq!(p.wealth, exp);
         p.make_bet(BET).unwrap(); // -1bet
         p.pay_out(JackState::DealerBust); // +2bet
-        assert_eq!(p.wealth, Player::DEF_WEALTH + BET);
+        let exp = exp + BET;
+        assert_eq!(p.wealth, exp);
         p.make_bet(BET).unwrap(); // -1bet
         p.pay_out(JackState::PlayerBust);
         p.make_bet(BET).unwrap(); // -1bet
@@ -398,12 +403,13 @@ mod tests {
         p.make_bet(BET).unwrap(); // -1bet
         assert!(p.make_bet(BET).is_none()); // don't bet twice
         p.pay_out(JackState::Push); // +1bet
-        assert_eq!(p.wealth, Player::DEF_WEALTH - BET);
-        for _ in 0..9 {
+        let exp = exp - 2 * BET;
+        assert_eq!(p.wealth, exp);
+        for _ in 0..7 {
             p.make_bet(BET).unwrap(); // -1bet
             p.pay_out(JackState::DealerWin);
         }
-        assert_eq!(p.wealth, 0);
+        assert_eq!(p.wealth, 50);
         assert!(p.make_bet(BET).is_none()); // no money
     }
 
