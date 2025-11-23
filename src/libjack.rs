@@ -38,7 +38,7 @@ impl Serialize for Game {
 impl Game {
     /// deals cards  
     /// called once a bet is made  
-    /// hole card check (USA)  
+    /// AHC: american holecard check  
     /// requires already set `deck`, call [`Game::default()`] before first use
     pub fn init(&mut self) {
         self.dealer.add_card(self.deck.deal_card());
