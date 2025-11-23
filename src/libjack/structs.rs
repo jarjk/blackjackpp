@@ -127,26 +127,9 @@ impl fmt::Display for Card {
 pub struct Deck {
     cards: Vec<Card>,
 }
-
-impl Deck {
-    /// number of initial Cards per Deck
-    pub const N_CARDS: usize = 52;
-    /// number of initial Decks per Deck
-    pub const N_DECKS: usize = 4;
-
-    /// Creates a new Deck from [`Deck::N_DECKS`], shuffled, ready to play
-    pub fn init() -> Deck {
-        let mut cards = Vec::with_capacity(Deck::N_DECKS * Deck::N_CARDS);
-        for _ in 0..Deck::N_DECKS {
-            cards.append(&mut Deck::new().cards);
-        }
-        let mut deck = Deck { cards };
-        deck.shuffle();
-        deck
-    }
-
+impl Default for Deck {
     /// Creates a new, standard 52-card deck.
-    pub fn new() -> Deck {
+    fn default() -> Self {
         let mut cards = Vec::with_capacity(Deck::N_CARDS);
         for &suit in &Suit::ALL {
             for &rank in &Rank::ALL {
@@ -154,6 +137,30 @@ impl Deck {
             }
         }
         Deck { cards }
+    }
+}
+
+impl Deck {
+    /// number of initial Cards per Deck
+    pub const N_CARDS: usize = 52;
+    /// number of initial Decks per Deck
+    pub const N_DECKS: usize = 4;
+
+    /// Creates a new Deck from [`Deck::N_DECKS`]  
+    /// NOTE: you'll most certainly want to use [`Deck::new`] instead of this
+    pub fn init() -> Deck {
+        let mut cards = Vec::with_capacity(Deck::N_DECKS * Deck::N_CARDS);
+        for _ in 0..Deck::N_DECKS {
+            cards.append(&mut Deck::default().cards);
+        }
+        Deck { cards }
+    }
+
+    /// Creates a new Deck from [`Deck::N_DECKS`], shuffled, ready to play
+    pub fn new() -> Deck {
+        let mut deck = Self::init();
+        deck.shuffle();
+        deck
     }
 
     /// Shuffles the deck randomly.
@@ -294,12 +301,12 @@ impl Player {
     }
 
     /// adds or subtracts `bet` from `wealth` if state is `has_ended`\
-    /// resets `bet` to 0
+    /// NOTE: `bet` has to be non-zero  
+    /// resets `bet` to 0 after successful payout
     pub fn pay_out(&mut self, state: JackState) {
         if !state.has_ended() {
             return;
         }
-        assert_ne!(self.bet, 0); // TODO: isn't it a bit overkill?
         let multip = match state {
             JackState::PlayerJack => 3, // (+orig_bet + 2*bet) yep, we're generous
             JackState::PlayerWin | JackState::DealerBust => 2, // +orig_bet+bet
@@ -320,7 +327,7 @@ mod tests {
 
     #[test]
     fn deck_init() {
-        let deck = Deck::new();
+        let deck = Deck::default();
         assert_eq!(deck.cards.len(), Deck::N_CARDS);
         assert_eq!(
             deck.cards.first(),

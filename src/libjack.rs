@@ -65,18 +65,21 @@ impl Game {
     pub fn deal_player(&mut self) {
         self.player.add_card(self.deck.deal_card());
     }
-    /// reset deck, hands, but remember player wealth\
+    /// reset hands, but continue deck and player wealth\
     /// NOTE: doesn't check if previous game has ended
     pub fn play_again(&mut self) {
         let player_wealth = self.player.wealth;
+        let deck = std::mem::take(&mut self.deck);
         *self = Self::default();
         self.player.wealth = player_wealth;
+        self.deck = deck;
     }
     /// returns current state
     pub fn current_state(&self) -> State {
         self.state
     }
     /// calculates state according to current dealer and player values and previous action\
+    /// NOTE: doesn't check whether game has ended already  
     /// NOTE: `BlackJack` is handled in [`Self::init`]
     fn new_state(&self, prev_action: MoveAction) -> State {
         let p_value = self.player.value();
@@ -99,9 +102,14 @@ impl Game {
             Ordering::Greater => State::PlayerWin,
         }
     }
-    /// updates state according to player, dealer values and `action`\
-    /// also handles paying out bet
+    /// applies `action` and updates state according to player, dealer values  
+    /// also handles paying out bet  
+    /// NOTE: only call this if a bet was previously made and the game hasn't ended yet
     pub fn update_state(&mut self, action: MoveAction) {
+        match action {
+            MoveAction::Hit => self.deal_player(),
+            MoveAction::Stand => self.deal_dealer(),
+        }
         self.state = self.new_state(action);
         self.player.pay_out(self.state);
     }
@@ -109,7 +117,7 @@ impl Game {
 impl Default for Game {
     fn default() -> Self {
         Game {
-            deck: structs::Deck::init(),
+            deck: structs::Deck::new(),
             dealer: structs::Hand::default(),
             player: structs::Player::default(),
             state: State::WaitingBet,
@@ -173,5 +181,42 @@ impl State {
             State::DealerJack | State::PlayerBust | State::DealerWin => 'd',
             State::Push => 'e',
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{structs::*, *};
+
+    fn predictable_game() -> Game {
+        Game {
+            deck: Deck::init(),
+            ..Game::default()
+        }
+    }
+
+    #[test]
+    fn primitive_game_play() {
+        let mut game = predictable_game();
+        game.init();
+        eprintln!("{game}");
+        assert_eq!(State::DealerJack, game.current_state());
+        game.player.make_bet(500).unwrap();
+        game.player.pay_out(game.current_state());
+        assert_eq!(500, game.player.wealth);
+        assert_eq!(0, game.player.get_bet());
+        game.play_again();
+        assert_eq!(State::WaitingBet, game.current_state());
+        assert_eq!(None, game.player.make_bet(1000));
+        game.player.make_bet(500).unwrap();
+        assert_eq!(0, game.player.wealth);
+        game.init();
+        eprintln!("{game}");
+        assert_eq!(State::Ongoing, game.current_state());
+        game.update_state(MoveAction::Stand);
+        assert_eq!(State::DealerWin, game.current_state());
+        assert_eq!(0, game.player.get_bet());
+        assert_eq!(0, game.player.wealth);
+        eprintln!("{game}");
     }
 }
