@@ -147,7 +147,7 @@ impl Deck {
     pub const N_DECKS: usize = 4;
 
     /// Creates a new Deck from [`Deck::N_DECKS`]  
-    /// NOTE: you'll most certainly want to use [`Deck::new`] instead of this
+    /// WARN: you'll most certainly want to use [`Deck::new`] instead of this
     pub fn init() -> Deck {
         let mut cards = Vec::with_capacity(Deck::N_DECKS * Deck::N_CARDS);
         for _ in 0..Deck::N_DECKS {
@@ -173,7 +173,7 @@ impl Deck {
     #[must_use]
     pub fn deal_card(&mut self) -> Card {
         if self.cards.len() < Deck::N_DECKS / 2 * Deck::N_CARDS {
-            *self = Deck::init();
+            *self = Deck::new();
         }
         self.cards.pop().unwrap() // SAFETY: refilled above if wouldn't be enough
     }
@@ -326,7 +326,7 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn deck_init() {
+    fn deck_new() {
         let deck = Deck::default();
         assert_eq!(deck.cards.len(), Deck::N_CARDS);
         assert_eq!(
@@ -345,7 +345,7 @@ mod tests {
             })
             .as_ref()
         );
-        let deck = Deck::init();
+        let deck = Deck::new();
         assert_eq!(deck.cards.len(), Deck::N_CARDS * Deck::N_DECKS);
 
         let mut suit_counts = Suit::ALL.iter().map(|s| (*s, 0)).collect::<HashMap<_, _>>();
@@ -428,7 +428,7 @@ mod tests {
     }
     #[test]
     fn deal_card() {
-        let mut deck = Deck::init();
+        let mut deck = Deck::new();
         const ORIG_LEN: usize = Deck::N_CARDS * Deck::N_DECKS;
         for i in 1..ORIG_LEN / 2 + 2 {
             _ = deck.deal_card(); // len--
