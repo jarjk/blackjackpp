@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 
 mod libjack;
 
-type CustomResp<T> = Result<T, CustomStatus<String>>;
+type CustomResp<T> = Result<T, CustomStatus<&'static str>>;
 type GameState = State<Arc<Mutex<BlackJack>>>;
 
 // Source - https://stackoverflow.com/questions/62412361/how-to-set-up-cors-or-options-for-rocket-rs
@@ -43,8 +43,8 @@ impl Fairing for CORS {
 }
 
 /// http response with `status` code and `msg`
-fn custom_err<T>(status: Status, msg: &str) -> CustomResp<T> {
-    Err(CustomStatus(status, msg.to_string()))
+fn custom_err<T>(status: Status, msg: &'static str) -> CustomResp<T> {
+    Err(CustomStatus(status, msg))
 }
 
 /// index, redirect to git repo
@@ -115,11 +115,7 @@ fn make_move(username: &str, action: MoveAction, game_state: &GameState) -> Cust
     } else if game.player.get_bet() == 0 {
         return custom_err(Status::PaymentRequired, "forgot to bet");
     }
-    match action {
-        MoveAction::Hit => game.deal_player(),
-        MoveAction::Stand => game.deal_dealer(),
-    }
-    game.update_state(action); // maybe it's ended
+    game.update_state(action); // deals, maybe now it's ended
     Ok(Json(game.clone())) // PERF: oops, TODO: shouldn't use `game_state_of` instead?
 }
 
