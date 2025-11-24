@@ -1,11 +1,6 @@
-target/
-subprojects/
-external/
-.cache/
+/target
+/subprojects
+/external
+/.cache
 **.log
 compile_commands.json
-
-
-# Added by cargo
-
-/target
