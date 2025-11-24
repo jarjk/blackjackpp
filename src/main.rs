@@ -123,16 +123,8 @@ fn game_state_of(username: &str, game_state: &GameState) -> Option<Json<Game>> {
     }
 }
 
-/// get the state of all the games
-// TODO: #[deprecated = "too much data, use `game_state_of` instead"] // might need a `list_users` endpoint
-#[get("/game_state")]
-fn game_state(state: &GameState) -> Json<BJTable> {
-    let state = &state.lock().unwrap();
-    Json((*state).clone()) // PERF: shit!
-}
-
 /// a blackjack table, with a separate dealer for each player
-#[derive(Debug, Default, Clone, serde::Serialize)]
+#[derive(Debug, Default, Clone)]
 struct BJTable {
     // TODO: one dealer and deck for all players|clients at the same table
     games: HashMap<String, Game>,
@@ -155,6 +147,6 @@ fn rocket() -> _ {
         .manage(Arc::new(Mutex::new(blackjack)))
         .mount(
             "/",
-            rocket::routes![index, join, bet, make_move, game_state, game_state_of],
+            rocket::routes![index, join, bet, make_move, game_state_of],
         )
 }
