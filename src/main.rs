@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 mod libjack;
 
 type CustomResp<T> = Result<T, CustomStatus<&'static str>>;
-type GameState = State<Arc<Mutex<BlackJack>>>;
+type GameState = State<Arc<Mutex<BJTable>>>;
 
 // Source - https://stackoverflow.com/questions/62412361/how-to-set-up-cors-or-options-for-rocket-rs
 // Posted by Ibraheem Ahmed, modified by community. See post 'Timeline' for change history
@@ -126,18 +126,18 @@ fn game_state_of(username: &str, game_state: &GameState) -> Option<Json<Game>> {
 /// get the state of all the games
 // TODO: #[deprecated = "too much data, use `game_state_of` instead"] // might need a `list_users` endpoint
 #[get("/game_state")]
-fn game_state(state: &GameState) -> Json<BlackJack> {
+fn game_state(state: &GameState) -> Json<BJTable> {
     let state = &state.lock().unwrap();
     Json((*state).clone()) // PERF: shit!
 }
 
 /// a blackjack table, with a separate dealer for each player
 #[derive(Debug, Default, Clone, serde::Serialize)]
-struct BlackJack {
+struct BJTable {
     // TODO: one dealer and deck for all players|clients at the same table
     games: HashMap<String, Game>,
 }
-impl std::fmt::Display for BlackJack {
+impl std::fmt::Display for BJTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (name, game) in &self.games {
             writeln!(f, "{name}: {game}")?;
@@ -148,7 +148,7 @@ impl std::fmt::Display for BlackJack {
 
 #[rocket::launch]
 fn rocket() -> _ {
-    let blackjack = BlackJack::default();
+    let blackjack = BJTable::default();
 
     rocket::build() // see Rocket.toml
         .attach(CORS)
