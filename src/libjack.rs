@@ -8,7 +8,7 @@
 //! - <https://serde.rs/impl-serialize.html>
 //! - <https://bewersdorff-online.de/black-jack/>
 
-use serde::{Serialize, ser::SerializeStruct};
+use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::cmp::Ordering;
 
 mod structs;
@@ -140,7 +140,7 @@ impl std::fmt::Display for Game {
 }
 
 /// what a user can do during their turn
-#[derive(Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MoveAction {
     // TODO: double-down, surrender, insurance, splitting?
     Hit,
