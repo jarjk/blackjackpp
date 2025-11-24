@@ -103,23 +103,23 @@ impl Rank {
     ];
 }
 
-/// A single playing card with a suit and rank.
+/// A single playing card with a rank and suit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Card {
-    pub suit: Suit,
     pub rank: Rank,
+    pub suit: Suit,
 }
 
 impl Card {
-    pub fn new(suit: Suit, rank: Rank) -> Card {
-        Card { suit, rank }
+    pub fn new(rank: Rank, suit: Suit) -> Card {
+        Card { rank, suit }
     }
 }
 
 /// For displaying the card in a user-friendly way.
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.rank, self.suit)
+        write!(f, "{}{}", self.suit, self.rank)
     }
 }
 
@@ -134,7 +134,7 @@ impl Default for Deck {
         let mut cards = Vec::with_capacity(Deck::N_CARDS);
         for &suit in &Suit::ALL {
             for &rank in &Rank::ALL {
-                cards.push(Card::new(suit, rank));
+                cards.push(Card::new(rank, suit));
             }
         }
         Deck { cards }
@@ -419,7 +419,7 @@ mod tests {
         let hand_from = |ranks: &[Rank]| Hand {
             cards: ranks
                 .iter()
-                .map(|rank| Card::new(Suit::Hearts, *rank))
+                .map(|rank| Card::new(*rank, Suit::Hearts))
                 .collect::<Vec<_>>(),
         };
 
@@ -427,10 +427,10 @@ mod tests {
         assert_eq!(2 + 3 + 10, hand.value());
         let mut hand = hand_from(&[Rank::Ace, Rank::Eight]);
         assert_eq!(11 + 8, hand.value());
-        hand.add_card(Card::new(Suit::Diamonds, Rank::Queen));
+        hand.add_card(Card::new(Rank::Queen, Suit::Diamonds));
         assert_eq!(1 + 8 + 10, hand.value());
-        hand.add_card(Card::new(Suit::Clubs, Rank::Ace));
-        hand.add_card(Card::new(Suit::Spades, Rank::Ace));
+        hand.add_card(Card::new(Rank::Ace, Suit::Clubs));
+        hand.add_card(Card::new(Rank::Ace, Suit::Spades));
         assert_eq!(1 + 8 + 10 + 1 + 1, hand.value());
     }
     #[test]
