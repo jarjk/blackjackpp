@@ -6,8 +6,6 @@ use rocket::http::Header;
 use rocket::response::status::Custom as CustomStatus;
 use rocket::serde::json::Json;
 use rocket::{Request, Response, State, get, http::Status, post, response::Redirect};
-use rocket_okapi::okapi::schemars;
-use rocket_okapi::okapi::schemars::JsonSchema;
 use rocket_okapi::{openapi, openapi_get_routes};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -132,7 +130,7 @@ fn game_state_of(username: &str, game_state: &GameState) -> Option<Json<Game>> {
 }
 
 /// a blackjack table, with a separate dealer for each player
-#[derive(Debug, Default, Clone, JsonSchema)]
+#[derive(Debug, Default, Clone)]
 struct BJTable {
     // TODO: one dealer and deck for all players|clients at the same table
     games: HashMap<String, Game>,

@@ -18,6 +18,7 @@ mod structs;
 #[derive(Debug, Clone, PartialEq, Eq, JsonSchema)]
 pub struct Game {
     // TODO: statistics (wins, loses, jacks, ...)?
+    #[schemars(skip)]
     deck: structs::Deck,
     dealer: structs::Hand,
     pub player: structs::Player,

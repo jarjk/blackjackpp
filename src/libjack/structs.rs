@@ -124,7 +124,7 @@ impl fmt::Display for Card {
 }
 
 /// Represents a deck of cards, made up from one or more standard decks.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Deck {
     cards: Vec<Card>,
 }
