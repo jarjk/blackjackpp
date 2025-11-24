@@ -5,7 +5,7 @@ use rocket::fairing::{Fairing, Info, Kind};
 use rocket::http::Header;
 use rocket::response::status::Custom as CustomStatus;
 use rocket::serde::json::Json;
-use rocket::{Request, Response, State, get, http::Status, post, response::Redirect};
+use rocket::{Request, Response, State, get, http::Status, options, post, response::Redirect};
 use rocket_okapi::{openapi, openapi_get_routes};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -50,6 +50,12 @@ fn custom_err<T>(status: Status, msg: &'static str) -> CustomResp<T> {
 #[get("/")]
 fn index() -> Redirect {
     Redirect::to("https://github.com/jarjk/blackjackpp")
+}
+
+/// handles CORS-related requests
+#[options("/<_..>")]
+fn cors_options() -> Status {
+    Status::Ok
 }
 
 /// join the game as `username`  
@@ -155,4 +161,5 @@ fn rocket() -> _ {
             "/",
             openapi_get_routes![index, join, bet, make_move, game_state_of],
         )
+        .mount("/", rocket::routes![cors_options])
 }
