@@ -137,9 +137,9 @@ struct ClientGame {
             int c = tolower(Input::read_ch());
             std::string action;
             if (c == 'h') {
-                action = "hit";
+                action = "Hit";
             } else if (c == 's') {
-                action = "stand";
+                action = "Stand";
             } else if (c == 3) {
                 throw std::runtime_error("premature exit, the user doesn't want to play anymore :(");
             } else {
