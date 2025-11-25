@@ -8,7 +8,7 @@
 //! - <https://serde.rs/impl-serialize.html>
 //! - <https://bewersdorff-online.de/black-jack/>
 
-use serde::{Serialize, ser::SerializeStruct};
+use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::cmp::Ordering;
 
 mod structs;
@@ -16,7 +16,7 @@ mod structs;
 mod tests;
 
 /// a game between one player and one dealer
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Game {
     // TODO: statistics (wins, loses, jacks, ...)?
     deck: structs::Deck,
@@ -140,7 +140,7 @@ impl std::fmt::Display for Game {
 }
 
 /// what a user can do during their turn
-#[derive(Debug, Clone, Copy, PartialEq, Eq, rocket::FromFormField, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MoveAction {
     // TODO: double-down, surrender, insurance, splitting?
     Hit,
@@ -149,7 +149,7 @@ pub enum MoveAction {
 
 /// state of one game\
 /// waiting for bet, ongoing, winner
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum State {
     WaitingBet,
     Ongoing,
