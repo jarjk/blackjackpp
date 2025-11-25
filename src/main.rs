@@ -26,13 +26,9 @@ struct BJTable {
     games: HashMap<String, Game>,
 }
 
-/* ------------------------------- ROUTES -------------------------------- */
-
 async fn index() -> Redirect {
     Redirect::temporary("https://github.com/jarjk/blackjackpp")
 }
-
-/* -------- join -------- */
 
 #[derive(Deserialize)]
 struct JoinQ {
@@ -58,8 +54,6 @@ async fn join(
         (StatusCode::OK, Json("first game"))
     }
 }
-
-/* -------- bet -------- */
 
 #[derive(Deserialize)]
 struct BetQ {
@@ -92,8 +86,6 @@ async fn bet(
     Ok(Json(game.clone()))
 }
 
-/* -------- move -------- */
-
 #[derive(Deserialize)]
 struct MoveQ {
     action: MoveAction,
@@ -121,8 +113,6 @@ async fn make_move(
     Ok(Json(game.clone()))
 }
 
-/* -------- game_state -------- */
-
 async fn game_state_of(
     Path(username): Path<String>,
     State(state): State<SharedTable>,
@@ -134,8 +124,6 @@ async fn game_state_of(
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
-
-/* ------------------------------------------------------------------------- */
 
 #[tokio::main]
 async fn main() {
