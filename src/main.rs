@@ -145,7 +145,8 @@ async fn main() {
         .route("/move/{username}", post(make_move))
         .route("/game_state/{username}", get(game_state_of))
         .layer(cors)
-        .with_state(shared_state);
+        .with_state(shared_state)
+        .fallback(async || (StatusCode::NOT_FOUND, "nothing to see here"));
 
     info!("running on http://0.0.0.0:5225");
 
