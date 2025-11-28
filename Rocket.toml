@@ -1,0 +1,6 @@
+# defaults for _all_ profiles
+[default]
+port = 5225
+
+[release]
+address = "0.0.0.0"

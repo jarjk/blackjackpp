@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 if test "$argv[1]" = ""
-    set addr "http://localhost:18080"
+    set addr "http://localhost:5225"
 else
     set addr "$argv[1]"
 end
@@ -28,4 +28,4 @@ POST "bet/$uname?amount=100"
 
 read -P 'action: ' action
 POST "move/$uname?action=$action"
-GET game_state
+GET game_state/$uname

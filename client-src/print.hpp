@@ -5,14 +5,6 @@
 #include <string>
 #include <tui.hpp>
 
-// enables raw mode for the time of the single character read
-inline char read_ch() {
-    tui::enable_raw_mode();
-    char ch = Input::read_ch();
-    tui::disable_raw_mode();
-    return ch;
-}
-
 struct Print {
     static std::string title_blackjack() {
         return R"(
