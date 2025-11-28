@@ -311,7 +311,7 @@ impl Player {
             return;
         }
         let (mult, div) = match state {
-            JackState::PlayerJack => (3, 2), // (+orig_bet + 3/2*bet) yep, we're generous
+            JackState::PlayerJack => (5, 2), // (+orig_bet(2/2) + 3/2*bet) yep, we're generous
             JackState::PlayerWin | JackState::DealerBust => (2, 1), // +orig_bet+bet
             JackState::Push => (1, 1),       // +orig_bet
             JackState::DealerJack | JackState::PlayerBust | JackState::DealerWin => (0, 1), // -orig_bet

@@ -58,7 +58,7 @@ fn payout() {
     let exp = Player::DEF_WEALTH - BET;
     assert_eq!(p.wealth, exp);
     p.pay_out(JackState::PlayerJack); // + 2.5bet
-    let exp = exp + BET * 3 / 2;
+    let exp = exp + BET * 5 / 2;
     assert_eq!(p.wealth, exp);
     p.make_bet(BET).unwrap(); // -1bet
     p.pay_out(JackState::DealerJack);
@@ -81,7 +81,7 @@ fn payout() {
     p.pay_out(JackState::Push); // +1bet
     let exp = exp - 2 * BET;
     assert_eq!(p.wealth, exp);
-    for _ in 0..7 {
+    for _ in 0..8 {
         p.make_bet(BET).unwrap(); // -1bet
         p.pay_out(JackState::DealerWin);
     }
