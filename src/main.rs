@@ -2,15 +2,18 @@
 
 use axum::{
     Json, Router,
-    extract::{Path, Query, State},
+    body::{Body, Bytes},
+    extract::{self, Path, Query, Request, State},
     http::StatusCode,
-    response::{IntoResponse, Redirect},
+    middleware,
+    response::{IntoResponse, Redirect, Response},
     routing::{get, post},
 };
+use http_body_util::BodyExt;
 use serde::Deserialize;
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
 use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
@@ -18,7 +21,7 @@ use tracing::info;
 mod libjack;
 use libjack::{Game, MoveAction};
 
-type SharedTable = Arc<Mutex<BJTable>>;
+type SharedTable = Arc<RwLock<BJTable>>;
 
 /// A blackjack table
 #[derive(Debug, Default, Clone)]
@@ -39,7 +42,7 @@ async fn join(
     Query(JoinQ { username }): Query<JoinQ>,
     State(state): State<SharedTable>,
 ) -> impl IntoResponse {
-    let mut table = state.lock().unwrap();
+    let mut table = state.write().unwrap();
     let games = &mut table.games;
 
     if let Some(game) = games.get_mut(&username) {
@@ -65,7 +68,7 @@ async fn bet(
     Query(BetQ { amount }): Query<BetQ>,
     State(state): State<SharedTable>,
 ) -> impl IntoResponse {
-    let mut table = state.lock().unwrap();
+    let mut table = state.write().unwrap();
 
     let Some(game) = table.games.get_mut(&username) else {
         return Err((StatusCode::NOT_FOUND, "can't find user"));
@@ -96,7 +99,7 @@ async fn make_move(
     Query(MoveQ { action }): Query<MoveQ>,
     State(state): State<SharedTable>,
 ) -> impl IntoResponse {
-    let mut table = state.lock().unwrap();
+    let mut table = state.write().unwrap();
 
     let Some(game) = table.games.get_mut(&username) else {
         return Err((StatusCode::NOT_FOUND, "can't find user"));
@@ -117,7 +120,7 @@ async fn game_state_of(
     Path(username): Path<String>,
     State(state): State<SharedTable>,
 ) -> impl IntoResponse {
-    let table = state.lock().unwrap();
+    let table = state.read().unwrap();
 
     match table.games.get(&username) {
         Some(game) => Json(game.clone()).into_response(),
@@ -128,10 +131,10 @@ async fn game_state_of(
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
+        .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let shared_state = Arc::new(Mutex::new(BJTable::default()));
+    let shared_state = Arc::new(RwLock::new(BJTable::default()));
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -145,11 +148,59 @@ async fn main() {
         .route("/move/{username}", post(make_move))
         .route("/game_state/{username}", get(game_state_of))
         .layer(cors)
+        .layer(middleware::from_fn(print_request_response))
         .with_state(shared_state)
         .fallback(async || (StatusCode::NOT_FOUND, "nothing to see here"));
 
-    info!("running on http://0.0.0.0:5225");
-
     let listener = tokio::net::TcpListener::bind("0.0.0.0:5225").await.unwrap();
+    info!("running on http://{}", listener.local_addr().unwrap());
+
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn print_request_response(
+    req: extract::Request,
+    next: middleware::Next,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    tracing::debug!("{} {}", req.method(), req.uri(),);
+    tracing::trace!(
+        "version: {:?}, headers: {:?}, extensions: {:?}",
+        req.version(),
+        req.headers(),
+        req.extensions(),
+    );
+    let (parts, body) = req.into_parts();
+    let bytes = buffer_and_print("request", body).await?;
+    let req = Request::from_parts(parts, Body::from(bytes));
+
+    let res = next.run(req).await;
+
+    let (parts, body) = res.into_parts();
+    let bytes = buffer_and_print("response", body).await?;
+    let res = Response::from_parts(parts, Body::from(bytes));
+    tracing::debug!("{}", res.status());
+
+    Ok(res)
+}
+
+async fn buffer_and_print<B>(direction: &str, body: B) -> Result<Bytes, (StatusCode, String)>
+where
+    B: axum::body::HttpBody<Data = Bytes>,
+    B::Error: std::fmt::Display,
+{
+    let bytes = match body.collect().await {
+        Ok(collected) => collected.to_bytes(),
+        Err(err) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("failed to read {direction} body: {err}"),
+            ));
+        }
+    };
+
+    if let Ok(body) = std::str::from_utf8(&bytes) {
+        tracing::trace!("{direction} body = {body:?}");
+    }
+
+    Ok(bytes)
 }
