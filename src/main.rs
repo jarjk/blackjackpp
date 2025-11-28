@@ -1,9 +1,20 @@
 //! a server for playing `BlackJack`
 
-use dioxus::fullstack::FullstackContext;
-use dioxus::fullstack::Redirect;
-use dioxus::fullstack::extract::FromRef;
+use dioxus::fullstack::{
+    FullstackContext, Redirect,
+    axum_core::extract,
+    body::Body,
+    extract::{FromRef, Request},
+    response::IntoResponse,
+};
+use dioxus::logger::tracing::Level;
+#[cfg(feature = "server")]
 use dioxus::prelude::*;
+use dioxus::server::{
+    Bytes,
+    axum::{self, middleware},
+};
+use http_body_util::BodyExt;
 use libjack::{Game, MoveAction};
 use std::collections::HashMap;
 #[cfg(feature = "server")]
@@ -138,20 +149,72 @@ fn App() -> Element {
 }
 
 fn main() {
+    dioxus::logger::init(Level::TRACE).expect("logger failed to init"); // configure level with 'RUST_LOG' env var
+
     #[cfg(not(feature = "server"))]
     dioxus::launch(App);
 
     #[cfg(feature = "server")]
     dioxus::serve(|| async move {
-        use dioxus::fullstack::Method;
+        use dioxus::{fullstack::Method, server::axum::middleware};
         use tower_http::cors::CorsLayer;
 
         let cors = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST])
             .allow_headers(tower_http::cors::Any)
             .allow_origin(tower_http::cors::Any);
-        let router = dioxus::server::router(App).layer(cors);
+        let router = dioxus::server::router(App)
+            .layer(cors)
+            .layer(middleware::from_fn(print_request_response));
 
         Ok(router)
     });
+}
+
+async fn print_request_response(
+    req: extract::Request,
+    next: middleware::Next,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    // debug!("{} {}", req.method(), req.uri()); // NOTE dioxus does this by deafult
+    trace!(
+        "version: {:?}, headers: {:?}, extensions: {:?}",
+        req.version(),
+        req.headers(),
+        req.extensions(),
+    );
+    let (parts, body) = req.into_parts();
+    let bytes = buffer_and_print("request", body).await?;
+    let req = Request::from_parts(parts, Body::from(bytes));
+
+    let res = next.run(req).await;
+
+    // NOTE dioxus does this by default
+    // let (parts, body) = res.into_parts();
+    // let bytes = buffer_and_print("response", body).await?;
+    // let res = Response::from_parts(parts, Body::from(bytes));
+    // debug!("{}", res.status());
+
+    Ok(res)
+}
+
+async fn buffer_and_print<B>(direction: &str, body: B) -> Result<Bytes, (StatusCode, String)>
+where
+    B: axum::body::HttpBody<Data = Bytes>,
+    B::Error: std::fmt::Display,
+{
+    let bytes = match body.collect().await {
+        Ok(collected) => collected.to_bytes(),
+        Err(err) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("failed to read {direction} body: {err}"),
+            ));
+        }
+    };
+
+    if let Ok(body) = std::str::from_utf8(&bytes) {
+        trace!("{direction} body = {body:?}");
+    }
+
+    Ok(bytes)
 }

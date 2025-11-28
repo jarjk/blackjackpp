@@ -4645,6 +4645,7 @@ version = "0.1.0"
 dependencies = [
  "dioxus",
  "fastrand",
+ "http-body-util",
  "serde",
  "tower-http",
 ]
