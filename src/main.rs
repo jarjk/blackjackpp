@@ -6,6 +6,7 @@ use rocket::http::Header;
 use rocket::response::status::Custom as CustomStatus;
 use rocket::serde::json::Json;
 use rocket::{Request, Response, State, get, http::Status, options, post, response::Redirect};
+use rocket_okapi::{openapi, openapi_get_routes};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -45,6 +46,7 @@ fn custom_err<T>(status: Status, msg: &'static str) -> CustomResp<T> {
 }
 
 /// index, redirect to git repo
+#[openapi]
 #[get("/")]
 fn index() -> Redirect {
     Redirect::to("https://github.com/jarjk/blackjackpp")
@@ -56,9 +58,10 @@ fn cors_options() -> Status {
     Status::Ok
 }
 
-/// join the game as `username`\
-/// if already joined and finished playing, rejoins\
-/// NOTE: currently each game has it's own dealer\
+/// join the game as `username`  
+/// if already joined and finished playing, rejoins  
+/// NOTE: currently each game has it's own dealer  
+#[openapi]
 #[get("/join?<username>")]
 fn join(username: &str, game_state: &GameState) -> CustomResp<Json<&'static str>> {
     let games = &mut game_state.lock().unwrap().games;
@@ -78,11 +81,12 @@ fn join(username: &str, game_state: &GameState) -> CustomResp<Json<&'static str>
     Ok(Json(resp))
 }
 
-/// make a bet of `amount` for `username`\
-/// requires a game waiting for bet of `username`\
-/// `bet` shall be non-zero, but shouldn't exceed user wealth\
-/// deals and so might end the game with a blackjack\
+/// make a bet of `amount` for `username`  
+/// requires a game waiting for bet of `username`  
+/// `bet` shall be non-zero, but shouldn't exceed user wealth  
+/// deals and so might end the game with a blackjack  
 /// returns game state
+#[openapi]
 #[post("/bet/<username>?<amount>")]
 fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<Json<Game>> {
     let games = &mut game_state.lock().unwrap().games;
@@ -99,10 +103,11 @@ fn bet(username: &str, amount: u16, game_state: &GameState) -> CustomResp<Json<G
     Ok(Json(game.clone())) // PERF: oops, TODO: shouldn't use `game_state_of` instead?
 }
 
-/// make a [`move`](MoveAction) for `username`\
-/// requires a previously made [bet]\
-/// might end the game\
+/// make a [`move`](MoveAction) for `username`  
+/// requires a previously made [bet]  
+/// might end the game  
 /// returns game state
+#[openapi]
 #[post("/move/<username>?<action>")]
 fn make_move(username: &str, action: MoveAction, game_state: &GameState) -> CustomResp<Json<Game>> {
     let games = &mut game_state.lock().unwrap().games;
@@ -119,6 +124,7 @@ fn make_move(username: &str, action: MoveAction, game_state: &GameState) -> Cust
 }
 
 /// get the game state of a specific `username`
+#[openapi]
 #[get("/game_state/<username>")]
 fn game_state_of(username: &str, game_state: &GameState) -> Option<Json<Game>> {
     let games = &game_state.lock().unwrap().games;
@@ -153,6 +159,7 @@ fn rocket() -> _ {
         .manage(Arc::new(Mutex::new(blackjack)))
         .mount(
             "/",
-            rocket::routes![index, join, bet, make_move, game_state_of, cors_options],
+            openapi_get_routes![index, join, bet, make_move, game_state_of],
         )
+        .mount("/", rocket::routes![cors_options])
 }

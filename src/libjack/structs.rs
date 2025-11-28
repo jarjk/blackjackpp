@@ -1,9 +1,10 @@
 //! data types for `BlackJack`
 //!
-//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>\
+//! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>  
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
 use crate::libjack::State as JackState;
+use rocket_okapi::{JsonSchema, okapi::schemars};
 use serde::{Serialize, ser::SerializeStruct};
 use std::fmt;
 
@@ -12,7 +13,7 @@ mod tests;
 
 /// Represents the four suits of a card deck.
 // TODO: manual `Serialize` impl might be better
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Hash, JsonSchema)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -35,7 +36,7 @@ impl fmt::Display for Suit {
 }
 
 /// Represents the 13 ranks of a card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, JsonSchema)]
 pub enum Rank {
     Two,
     Three,
@@ -79,7 +80,7 @@ impl Rank {
     pub fn as_u8(self) -> u8 {
         self as u8 + 2
     }
-    /// Returns the primary value for a card rank.\
+    /// Returns the primary value for a card rank.  
     /// Ace is initially counted as 11.
     pub fn value_hint(self) -> u8 {
         match self {
@@ -106,7 +107,7 @@ impl Rank {
 }
 
 /// A single playing card with a rank and suit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Card {
     pub rank: Rank,
     pub suit: Suit,
@@ -171,7 +172,7 @@ impl Deck {
         fastrand::shuffle(&mut self.cards);
     }
 
-    /// Deals one card from the top of the deck.\
+    /// Deals one card from the top of the deck.  
     /// Refills the whole Deck if half of it is gone.
     #[must_use]
     pub fn deal_card(&mut self) -> Card {
@@ -193,7 +194,7 @@ impl Deck {
 // }
 
 /// Represents a player's or dealer's hand.
-#[derive(Default, Clone, PartialEq, Eq)]
+#[derive(Default, Clone, PartialEq, Eq, JsonSchema)]
 pub struct Hand {
     cards: Vec<Card>,
 }
@@ -258,7 +259,7 @@ impl fmt::Debug for Hand {
 }
 
 /// Represents a player.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Player {
     hand: Hand,
     pub wealth: u16,
