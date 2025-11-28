@@ -1,0 +1,112 @@
+name: CI client with meson
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    paths:
+      - "**.cpp"
+      - "**.hpp"
+      - ".github/workflows/**"
+      - "meson.*"
+    tags: ["client-v*.*.*"]
+
+jobs:
+  build:
+    name: Build and Test on ${{ matrix.os }} with Meson
+    permissions:
+      contents: read
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-latest, windows-latest, ubuntu-22.04-arm]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup MSVC dev environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Set cl.exe for windows build
+        if: runner.os == 'Windows'
+        run: |
+          echo "CC=cl" >> "$GITHUB_ENV"
+          echo "CXX=cl" >> "$GITHUB_ENV"
+
+      - name: Set sys and executable name variables
+        id: set_vars
+        shell: bash
+        run: |
+          SYS=$(echo "${{ runner.arch }}-${{ runner.os }}" | tr '[:upper:]' '[:lower:]' | sed "s/x64/x86_64/" | sed "s/arm64/aarch64/")
+
+          echo "artifact_name=blackjackpp-${SYS}" >> "$GITHUB_ENV"
+          echo "sys=${SYS}" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        with:
+          path: builddir/
+          key: ${{ env.sys }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: 'build-sys-pip-pkgs.txt'
+      - run: pip install -r build-sys-pip-pkgs.txt
+
+      - name: Reconfigure Meson
+        run: meson setup -Ddefault_library=static -Db_vscrt=mt --wipe --buildtype=release --optimization=3 builddir/
+
+      - name: compile
+        run: meson compile -C builddir/ -v
+
+      - name: Upload compilation log
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ${{ env.sys }}_meson_logs
+          path: builddir/meson-logs/*
+          
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.artifact_name }}
+          path: |
+            builddir/blackjackpp-client
+            builddir/blackjackpp-client.exe
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    needs: build
+    steps:
+      - name: Download prebuilt binary artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: release-artifacts
+        
+      - name: Prepare artifacts
+        run: |
+          set -e # exit on errors
+          tree
+
+          for platform in $(ls); do # Loop through each artifact subdirectory
+            echo "working on: '$platform'"
+            for bin in $(ls "$platform"); do
+              echo "binary found: '$bin'"
+              name="$platform-$(echo "$bin" | cut -d '-' -f 2)"
+              mv "$platform/$bin" "$name"
+            done
+            rm -r "$platform"
+          done
+          ls -lARh . # beautiful!
+
+      - name: Create a GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          # draft: true
+          generate_release_notes: true
+          files: release-artifacts/*
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
