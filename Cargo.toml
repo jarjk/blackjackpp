@@ -1,0 +1,3 @@
+[workspace]
+members = ["libjack", "server", "client"]
+resolver = "2"

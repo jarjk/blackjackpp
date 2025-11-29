@@ -1,0 +1,21 @@
+[package]
+name = "dioxus-client2"
+version = "0.1.0"
+authors = ["csboo <csongiboo@gmail.com>"]
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.100"
+dioxus = { version = "0.7.1", features = ["web"] }
+reqwest = { version = "0.12.24", default-features = false, features = ["json"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+libjack = { path = "../libjack", default-features = false }
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]

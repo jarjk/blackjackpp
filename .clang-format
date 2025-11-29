@@ -1,5 +1,0 @@
-NamespaceIndentation: All
-PointerAlignment: Left
-IndentWidth: 4
-ColumnLimit: 108
-BasedOnStyle: Google
