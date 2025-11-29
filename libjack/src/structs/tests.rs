@@ -1,4 +1,4 @@
-use crate::libjack::structs::*;
+use crate::structs::*;
 use std::collections::HashMap;
 
 #[test]

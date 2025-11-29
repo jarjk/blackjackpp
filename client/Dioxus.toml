@@ -1,0 +1,28 @@
+[application]
+assets = ["assets"]
+
+[platform.desktop]
+assets = ["assets"]
+
+[platform.android]
+assets = ["assets"]
+
+[web.app]
+
+# HTML title tag content
+title = "dioxus-client2"
+
+# include `assets` in web platform
+[web.resource]
+
+# Additional CSS style files
+style = ["assets/tailwind.css"]
+
+# Additional JavaScript files
+script = []
+
+[web.resource.dev]
+
+# Javascript code file
+# serve: [dev-server] only
+script = []

@@ -3,7 +3,7 @@
 //! adapted from <https://github.com/krisfur/rustjack/blob/master/src/game.rs>\
 //! icons from <https://en.wikipedia.org/wiki/Playing_cards_in_Unicode>
 
-use crate::libjack::State as JackState;
+use crate::State as JackState;
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::fmt;
 
@@ -195,7 +195,7 @@ impl Deck {
 /// Represents a player's or dealer's hand.
 #[derive(Default, Clone, PartialEq, Eq, Deserialize)]
 pub struct Hand {
-    cards: Vec<Card>,
+    pub cards: Vec<Card>,
 }
 impl Serialize for Hand {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
@@ -260,9 +260,9 @@ impl fmt::Debug for Hand {
 /// Represents a player.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Player {
-    hand: Hand,
+    pub hand: Hand,
     pub wealth: u16,
-    bet: u16,
+    pub bet: u16,
 }
 impl Default for Player {
     fn default() -> Self {

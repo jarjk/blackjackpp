@@ -11,7 +11,7 @@
 use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use std::cmp::Ordering;
 
-mod structs;
+pub mod structs;
 #[cfg(test)]
 mod tests;
 
@@ -19,10 +19,10 @@ mod tests;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Game {
     // TODO: statistics (wins, loses, jacks, ...)?
-    deck: structs::Deck,
-    dealer: structs::Hand,
+    pub deck: structs::Deck,
+    pub dealer: structs::Hand,
     pub player: structs::Player,
-    state: State,
+    pub state: State,
 }
 
 impl Serialize for Game {

@@ -4,3 +4,8 @@
 /.cache
 **.log
 compile_commands.json
+
+#client
+client/target
+client/node_modules
+client/AGENTS.md

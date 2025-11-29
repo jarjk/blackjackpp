@@ -23,7 +23,7 @@ use {
     std::sync::{Arc, Mutex},
 };
 
-mod libjack;
+
 
 // type CustomResp<T> = Result<T, CustomStatus<&'static str>>;
 // type GameState = State<BJTable>;
